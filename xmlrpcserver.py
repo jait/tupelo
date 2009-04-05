@@ -2,14 +2,15 @@
 # vim: set sts=4 sw=4 et:
 
 from SimpleXMLRPCServer import SimpleXMLRPCServer
-from xmlrpc import TupeloXMLRPCInterface
+import xmlrpc
 
-PORT = 8052
+#PORT = 8052
+PORT = xmlrpc.DEFAULT_PORT
 
 if __name__ == '__main__':
    
     server = SimpleXMLRPCServer(('localhost', PORT))
-    rpciface = TupeloXMLRPCInterface()
+    rpciface = xmlrpc.TupeloXMLRPCInterface()
     server.register_instance(rpciface)
     print 'Tupelo server serving at port %d' % PORT
     try:
