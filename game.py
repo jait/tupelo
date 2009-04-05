@@ -2,17 +2,18 @@
 # vim: set sts=4 sw=4 et:
 
 import common
-from common import Card, CardSet
+from common import CardSet
 from common import NOLO, RAMI
 from common import STOPPED, VOTING, ONGOING
 from common import RuleError, GameError, GameState 
-from players import Player, DummyBotPlayer, CountingBotPlayer, CliPlayer
+from players import DummyBotPlayer, CountingBotPlayer, CliPlayer
 import threading
 import sys
 import copy
 
 class GameController(object):
     """
+    The controller class that runs everything.
     """
 
     def __init__(self):
@@ -32,9 +33,15 @@ class GameController(object):
         player.team = player.id % 2
 
     def _get_team_players(self, team):
+        """
+        Get players in a team.
+        """
         return [player for player in self.players if player.team == team]
        
     def _get_team_str(self, team):
+        """
+        Get team string representation.
+        """
         players = self._get_team_players(team)
         return '%d (%s and %s)' % (team + 1, players[0].player_name, players[1].player_name)
 
@@ -43,8 +50,8 @@ class GameController(object):
         Send a message to all players.
         """
         print msg
-        for pl in self.players:
-            pl.send_message('', msg)
+        for player in self.players:
+            player.send_message('', msg)
 
     def start_game(self):
         """
@@ -141,7 +148,8 @@ class GameController(object):
             else:
                 score = (self.state.tricks[winner] - 6) * 4
 
-        self._send_msg('Team %s won this hand with %d tricks' % (self._get_team_str(winner), self.state.tricks[winner]))
+        self._send_msg('Team %s won this hand with %d tricks' % 
+                (self._get_team_str(winner), self.state.tricks[winner]))
 
         if self.state.score[loser] > 0:
             self._send_msg('Team %s fell down' % (self._get_team_str(loser)))
@@ -149,11 +157,13 @@ class GameController(object):
         else:
             self.state.score[winner] += score
             if self.state.score[winner] > 52:
-                self._send_msg('Team %s won with score %d!' % (self._get_team_str(winner), self.state.score[winner]))
+                self._send_msg('Team %s won with score %d!' % 
+                        (self._get_team_str(winner), self.state.score[winner]))
                 self.shutdown_event.set()
                 return
             else:
-                self._send_msg('Team %s is at %d' % (self._get_team_str(winner), self.state.score[winner]))
+                self._send_msg('Team %s is at %d' % 
+                        (self._get_team_str(winner), self.state.score[winner]))
 
         self.state.dealer = (self.state.dealer + 1) % 4
         self._start_new_hand()
@@ -172,6 +182,36 @@ class GameController(object):
 
         sys.exit(0)
 
+    def _vote_card(self, player, card):
+        """
+        Player votes with a card.
+        """
+        table = self.state.table
+
+        card = copy.copy(card)
+        card.played_by = player
+        table.append(card)
+        self.state.next_in_turn()
+        if len(table) == 4:
+            for card in table:
+                # fire signals
+                for plr in self.players:
+                    plr.card_played(card.played_by, card, self.state)
+                if card.suit == common.DIAMOND or card.suit == common.HEART:
+                    self.state.mode = RAMI
+                    self.state.rami_chosen_by = player
+                    self.state.next_in_turn(card.played_by.id - 1)
+                    break
+            table.clear()
+            if self.state.mode == NOLO:
+                self._send_msg('Nolo it is')
+            else:
+                self._send_msg('Rami it is')
+            self.state.state = ONGOING
+            self._send_msg('Game on, %s begins!' % self.players[self.state.turn])
+
+        self.players[self.state.turn].act(self, self.state)
+            
     def play_card(self, player, card):
         """
         Play one card on the table.
@@ -182,44 +222,24 @@ class GameController(object):
         table = self.state.table
 
         if self.state.state == VOTING:
-            card = copy.copy(card)
-            card.played_by = player
-            table.append(card)
-            self.state.next_in_turn()
-            if len(table) == 4:
-                for card in table:
-                    # fire signals
-                    for pl in self.players:
-                        pl.card_played(card.played_by, card, self.state)
-                    if card.suit == common.DIAMOND or card.suit == common.HEART:
-                        self.state.mode = RAMI
-                        self.state.rami_chosen_by = player
-                        self.state.next_in_turn(card.played_by.id - 1)
-                        break
-                table.clear()
-                if self.state.mode == NOLO:
-                    self._send_msg('Nolo it is')
-                else:
-                    self._send_msg('Rami it is')
-                self.state.state = ONGOING
-                self._send_msg('Game on, %s begins!' % self.players[self.state.turn])
-
-            self.players[self.state.turn].act(self, self.state)
+            self._vote_card(player, card)
 
         elif self.state.state == ONGOING:
+            # make sure that suit is followed
             if len(table) > 0 and card.suit != table[0].suit:
                 if len(player.hand.get_cards(suit=table[0].suit)) > 0:
                     raise RuleError('Suit must be followed')
-
+            
+            # make sure that the player actually has the card
             try: 
                 table.append(player.hand.take(card))
                 card.played_by = player
-            except ValueError, error:
+            except ValueError:
                 raise RuleError('Invalid card')
 
             # fire signals
-            for pl in self.players:
-                pl.card_played(player, card, self.state)
+            for plr in self.players:
+                plr.card_played(player, card, self.state)
 
             if len(table) == 4:
                 self._trick_played()

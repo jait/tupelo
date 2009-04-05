@@ -7,8 +7,10 @@ import xmlrpc
 #PORT = 8052
 PORT = xmlrpc.DEFAULT_PORT
 
-if __name__ == '__main__':
-   
+def _runserver():
+    """
+    Run, Forrest! Run!
+    """
     server = SimpleXMLRPCServer(('localhost', PORT))
     rpciface = xmlrpc.TupeloXMLRPCInterface()
     server.register_instance(rpciface)
@@ -18,4 +20,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print 'Shutting down'
         rpciface.game.shutdown()
-
+        
+if __name__ == '__main__':
+    _runserver()

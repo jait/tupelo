@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # vim: set sts=4 sw=4 et:
 
-import sys
 import time
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 import xmlrpclib
@@ -52,12 +51,11 @@ class TupeloXMLRPCInterface(object):
 
     def __init__(self):
         self.game = game.GameController()
-        pass
 
     def _get_player(self, player_id):
-        for pl in self.game.players:
-            if pl.id == player_id: 
-                return pl
+        for player in self.game.players:
+            if player.id == player_id: 
+                return player
         return None
 
     def echo(self, test):
@@ -175,6 +173,8 @@ class XMLRPCCliPlayer(players.CliPlayer):
     def __init__(self, player_name, server):
         players.CliPlayer.__init__(self, player_name)
         self.controller = XMLRPCProxyController(server)
+        self.game_state = None
+        self.hand = None
 
     def run(self):
         """
@@ -195,6 +195,7 @@ class XMLRPCCliPlayer(players.CliPlayer):
             if self.game_state.turn != self.id:
                 continue
 
+            # TODO: this is too similar to Player.run, refactor!
             if self.game_state.state == STOPPED:
                 break
             elif self.game_state.state == VOTING:
@@ -236,8 +237,8 @@ class XMLRPCProxyController(object):
         state['hand'] = rpc.rpc_decode(CardSet, state['hand'])
         return state
 
-if __name__ == '__main__':
-   
+
+def _runserver():
     server = SimpleXMLRPCServer(('localhost', DEFAULT_PORT))
     rpciface = TupeloXMLRPCInterface()
     server.register_instance(rpciface)
@@ -247,4 +248,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print 'Shutting down'
         rpciface.game.shutdown()
-
+        
+if __name__ == '__main__':
+    _runserver()

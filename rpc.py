@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 # vim: set sts=4 sw=4 et:
 
-import random
-import copy
-
-def rpc_encode(object):
+def rpc_encode(obj):
     """
     Encode an object into RPC-safe form.
     """
     try:
-        return object.rpc_encode()
+        return obj.rpc_encode()
     except AttributeError:
-        return object
+        return obj
 
 def rpc_decode(cls, rpcobj):
     """
@@ -29,6 +26,7 @@ class RPCSerializable(object):
     """
     def rpc_encode(self):
         """
+        Encode an instance of RPCSerializable into an rpc object.
         """
         if hasattr(self, 'rpc_fields'):
             rpcobj = {}
@@ -48,6 +46,9 @@ class RPCSerializable(object):
     
     @classmethod
     def rpc_decode_simple(cls, rpcobj):
+        """
+        Default decode method.
+        """
         if hasattr(cls, 'rpc_fields'):
             instance = cls()
             for attr in cls.rpc_fields:
@@ -59,5 +60,8 @@ class RPCSerializable(object):
 
     @classmethod
     def rpc_decode(cls, rpcobj):
+        """
+        Decode an rpc object into an instance of cls.
+        """
         return cls.rpc_decode_simple(rpcobj)
 

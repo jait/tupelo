@@ -16,17 +16,22 @@ class Player(threading.Thread, rpc.RPCSerializable):
     def __init__(self, name):
         self.id = -1
         threading.Thread.__init__(self, None, None, name)
+        rpc.RPCSerializable.__init__(self)
         self.player_name = name
         self.hand = CardSet()
         self.team = 0
         self.turn_event = threading.Event()
         self.controller = None
+        self.game_state = None
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.player_name)
 
     @classmethod
     def rpc_decode(cls, rpcobj):
+        """
+        Decode an RPC-form object into an instance of cls.
+        """
         return cls(rpcobj['player_name'])
 
     def run(self):
@@ -47,14 +52,12 @@ class Player(threading.Thread, rpc.RPCSerializable):
                 except Exception, error:
                     print 'Error:', error
                     raise error
-                    break
             else:
                 try:
                     self.play_card()
                 except Exception, error:
                     print 'Error:', error
                     raise error
-                    break
         
         print 'Thread exiting'
 
@@ -92,6 +95,7 @@ class Player(threading.Thread, rpc.RPCSerializable):
         self.controller = controller
         self.game_state = game_state
         self.turn_event.set()
+
 
 class DummyBotPlayer(Player):
     """
@@ -270,15 +274,15 @@ class CliPlayer(Player):
         card = None
         while not card_ok:
             try:
-                input = raw_input('%s (1-%d) --> ' % (prompt, len(self.hand)))
-                index = int(input) - 1
+                uinput = raw_input('%s (1-%d) --> ' % (prompt, len(self.hand)))
+                index = int(uinput) - 1
                 if index < 0:
                     raise IndexError()
                 card = self.hand[index] 
                 card_ok = True
             except (IndexError, ValueError):
-                print "Invalid choice `%s'" % input
-            except EOFError, error:
+                print "Invalid choice `%s'" % uinput
+            except EOFError:
                 #error.message = 'EOF received from command line'
                 #error.args = error.message,
                 #raise error

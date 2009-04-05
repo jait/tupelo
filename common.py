@@ -16,15 +16,22 @@ ONGOING = 2
 
 
 class GameError(Exception):
+    """
+    Generic error class for game errors.
+    """
     rpc_code = 1
 
 
 class RuleError(Exception):
+    """
+    Error for breaking the game rules.
+    """
     rpc_code = 2
 
 
 class Suit(object):
     """
+    Class for suits.
     """
     def __init__(self, value, name, char=''):
         self.name = name
@@ -63,9 +70,10 @@ class Card(rpc.RPCSerializable):
     rpc_fields = ('suit', 'value')
 
     def __init__(self, suit, value):
+        super(Card, self).__init__(self)
         self.suit = suit
         self.value = value
-        self.potential_owners = range(0,4)
+        self.potential_owners = range(0, 4)
         self.played_by = None
 
     @classmethod
@@ -137,10 +145,10 @@ class CardSet(list, rpc.RPCSerializable):
 
     @classmethod
     def rpc_decode(cls, rpcobj):
-        cs = cls()
+        cset = cls()
         for card in rpcobj:
-            cs.append(rpc.rpc_decode(Card, card))
-        return cs
+            cset.append(rpc.rpc_decode(Card, card))
+        return cset
 
     def get_cards(self, **kwargs):
         """
@@ -185,9 +193,9 @@ class CardSet(list, rpc.RPCSerializable):
         Deal this CardSet into cardsets.
         """
         while len(self) > 0:
-            for set in cardsets:
+            for cset in cardsets:
                 try:
-                    set.append(self.pop(0))
+                    cset.append(self.pop(0))
                 except IndexError:
                     break
 
@@ -246,6 +254,7 @@ class GameState(rpc.RPCSerializable):
     rpc_fields = ('state', 'mode', 'table', 'score', 'tricks', 'turn')
 
     def __init__(self):
+        super(GameState, self).__init__(self)
         self.state = STOPPED
         self.mode = NOLO
         self.table = CardSet()
