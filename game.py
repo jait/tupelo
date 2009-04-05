@@ -17,6 +17,7 @@ class GameController(object):
     """
 
     def __init__(self):
+        super(GameController, self).__init__(self)
         self.players = []
         self.state = GameState()
         self.shutdown_event = threading.Event()
@@ -31,6 +32,21 @@ class GameController(object):
         self.players.append(player)
         player.id = self.players.index(player)
         player.team = player.id % 2
+
+    def player_quit(self, player):
+        """
+        Player quits.
+        """
+        self._send_msg('Player %s quit' % player)
+        self._reset()
+
+    def _reset(self):
+        """
+        Reset the game.
+        """
+        print 'Resetting'
+        self.players = []
+        self.state = GameState()
 
     def _get_team_players(self, team):
         """

@@ -6,7 +6,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 import xmlrpclib
 import players
 import rpc
-from common import GameState, Card, CardSet, GameError, RuleError
+from common import GameState, Card, CardSet, GameError, RuleError, UserQuit
 from common import STOPPED, VOTING, ONGOING
 import game
 
@@ -73,6 +73,15 @@ class TupeloXMLRPCInterface(object):
         return player.id
 
     @error2fault
+    def player_quit(self, player_id):
+        """
+        Player quits.
+        """
+        self.game.player_quit(self._get_player(player_id))
+        # without allow_none, XMLRPC methods must always return something
+        return True
+
+    @error2fault
     def get_state(self, player_id):
         response = {}
         response['game_state'] = rpc.rpc_encode(self.game.state)
@@ -111,7 +120,7 @@ class TupeloXMLRPCInterface(object):
 
 class RPCProxyPlayer(players.Player):
     """
-    Class (server-side) for remote/RPC players.
+    Server-side class for remote/RPC players.
     """
     def __init__(self, name):
         players.Player.__init__(self, name)
@@ -169,17 +178,16 @@ class XMLRPCCliPlayer(players.CliPlayer):
     """
     XML-RPC command line interface human player.
     """
-
     def __init__(self, player_name, server):
         players.CliPlayer.__init__(self, player_name)
         self.controller = XMLRPCProxyController(server)
         self.game_state = None
         self.hand = None
 
-    def run(self):
+    def wait_for_turn(self):
         """
+        Wait for this player's turn.
         """
-        print '%s starting' % self
         while True:
 
             time.sleep(0.5)
@@ -192,34 +200,16 @@ class XMLRPCCliPlayer(players.CliPlayer):
                 for msg in messages:
                     print '%s: %s' % (msg[0], msg[1])
 
-            if self.game_state.turn != self.id:
-                continue
-
-            # TODO: this is too similar to Player.run, refactor!
-            if self.game_state.state == STOPPED:
+            if self.game_state.turn == self.id:
                 break
-            elif self.game_state.state == VOTING:
-                try:
-                    self.vote()
-                except Exception, error:
-                    print 'Error:', error
-                    break
-            else:
-                try:
-                    self.play_card()
-                except Exception, error:
-                    print 'Error:', error
-                    break
-        
-        print '%s exiting' % self
 
 
 class XMLRPCProxyController(object):
     """
     Client-side proxy object for the server/GameController.
     """
-
     def __init__(self, server):
+        super(XMLRPCProxyController, self).__init__(self)
         self.server = server 
 
     @fault2error
@@ -236,6 +226,10 @@ class XMLRPCProxyController(object):
         state['game_state'] = rpc.rpc_decode(GameState, state['game_state'])
         state['hand'] = rpc.rpc_decode(CardSet, state['hand'])
         return state
+
+    @fault2error
+    def player_quit(self, player_id):
+        self.server.player_quit(player_id)
 
 
 def _runserver():

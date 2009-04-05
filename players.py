@@ -5,7 +5,7 @@ import threading
 from common import CardSet, SPADE, CLUB, HEART, DIAMOND
 from common import NOLO, RAMI
 from common import STOPPED, VOTING, ONGOING
-from common import RuleError
+from common import RuleError, UserQuit
 import rpc
 
 class Player(threading.Thread, rpc.RPCSerializable):
@@ -34,32 +34,47 @@ class Player(threading.Thread, rpc.RPCSerializable):
         """
         return cls(rpcobj['player_name'])
 
+    def wait_for_turn(self):
+        """
+        Wait for this player's turn.
+        """
+        #print "%s waiting for my turn" % self
+        self.turn_event.wait()
+        #print "%s it's about time!" % self
+        self.turn_event.clear()
+
     def run(self):
         """
         """
         print '%s starting' % self
         while True:
-            #print "%s waiting for my turn" % self
-            self.turn_event.wait()
-            #print "%s it's about time!" % self
-            self.turn_event.clear()
+
+            self.wait_for_turn()
 
             if self.game_state.state == STOPPED:
                 break
             elif self.game_state.state == VOTING:
                 try:
                     self.vote()
+                except UserQuit, error:
+                    print '%d: UserQuit:' % self.id, error
+                    self.controller.player_quit(self.id)
+                    break
                 except Exception, error:
                     print 'Error:', error
                     raise error
             else:
                 try:
                     self.play_card()
+                except UserQuit, error:
+                    print '%d: UserQuit:' % self.id, error
+                    self.controller.player_quit(self.id)
+                    break
                 except Exception, error:
                     print 'Error:', error
                     raise error
         
-        print 'Thread exiting'
+        print '%s exiting' % self
 
     def card_played(self, player, card, game_state):
         """
@@ -69,12 +84,14 @@ class Player(threading.Thread, rpc.RPCSerializable):
 
     def vote(self):
         """
+        Vote for rami or nolo.
         """
         print 'Not implemented!'
         raise NotImplementedError()
        
     def play_card(self):
         """
+        Play one card.
         """
         print 'Not implemented!'
         raise NotImplementedError()
@@ -110,6 +127,7 @@ class DummyBotPlayer(Player):
 
     def vote(self):
         """
+        Vote for rami or nolo.
         """
         # simple algorithm
         score = 0
@@ -237,6 +255,7 @@ class CountingBotPlayer(DummyBotPlayer):
 
     def vote(self):
         """
+        Vote for rami or nolo.
         """
         self.cards_left = CardSet.new_full_deck() - self.hand
         super(CountingBotPlayer, self).vote()
@@ -304,6 +323,8 @@ class CliPlayer(Player):
                 card_played = True
             except RuleError, error:
                 print 'Oops:', error
+            except EOFError:
+                raise UserQuit('EOF from command line')
 
     def play_card(self):
         """
@@ -332,6 +353,8 @@ class CliPlayer(Player):
                 card_played = True
             except RuleError, error:
                 print 'Oops:', error
+            except EOFError:
+                raise UserQuit('EOF from command line')
 
     def card_played(self, player, card, game_state):
         """

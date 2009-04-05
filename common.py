@@ -29,6 +29,13 @@ class RuleError(Exception):
     rpc_code = 2
 
 
+class UserQuit(GameError):
+    """
+    Exception for indicating that user quits the game.
+    """
+    pass
+
+
 class Suit(object):
     """
     Class for suits.
