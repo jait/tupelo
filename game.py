@@ -10,6 +10,7 @@ from players import DummyBotPlayer, CountingBotPlayer, CliPlayer
 import threading
 import sys
 import copy
+import logging
 
 class GameController(object):
     """
@@ -44,7 +45,7 @@ class GameController(object):
         """
         Reset the game.
         """
-        print 'Resetting'
+        logging.info('Resetting')
         self.players = []
         self.state = GameState()
 
@@ -65,7 +66,7 @@ class GameController(object):
         """
         Send a message to all players.
         """
-        print msg
+        logging.debug(msg)
         for player in self.players:
             player.send_message('', msg)
 
@@ -92,21 +93,21 @@ class GameController(object):
         """
         Start a new hand.
         """
-        print 'New hand'
+        logging.info('New hand')
         self.state.tricks = [0, 0]
 
         # create a full deck
         deck = CardSet.new_full_deck()
 
-        #print 'deck is', deck
+        logging.debug('deck is %s' % str(deck))
         deck.shuffle()
-        #print 'shuffled deck', deck
+        logging.debug('shuffled deck %s' % str(deck))
 
         deck.deal([player.hand for player in self.players])
 
         for player in self.players:
             player.hand.sort()
-            print "%s's hand " % player.player_name, player.hand
+            logging.debug("%s's hand " % player.player_name, player.hand)
 
         # voting 
         self.state.mode = NOLO

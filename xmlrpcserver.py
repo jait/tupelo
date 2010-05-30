@@ -3,6 +3,7 @@
 
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 import xmlrpc
+import logging
 
 #PORT = 8052
 PORT = xmlrpc.DEFAULT_PORT
@@ -11,14 +12,16 @@ def _runserver():
     """
     Run, Forrest! Run!
     """
+    format = "server: %(message)s"
+    logging.basicConfig(level=logging.INFO, format=format)
     server = SimpleXMLRPCServer(('localhost', PORT))
     rpciface = xmlrpc.TupeloXMLRPCInterface()
     server.register_instance(rpciface)
-    print 'Tupelo server serving at port %d' % PORT
+    logging.info('Tupelo server serving at port %d' % PORT)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print 'Shutting down'
+        logging.info('Shutting down')
         rpciface.game.shutdown()
         
 if __name__ == '__main__':
