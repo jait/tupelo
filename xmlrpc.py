@@ -231,17 +231,3 @@ class XMLRPCProxyController(object):
     def player_quit(self, player_id):
         self.server.player_quit(player_id)
 
-
-def _runserver():
-    server = SimpleXMLRPCServer(('localhost', DEFAULT_PORT))
-    rpciface = TupeloXMLRPCInterface()
-    server.register_instance(rpciface)
-    print 'Tupelo server serving at port %d' % DEFAULT_PORT
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print 'Shutting down'
-        rpciface.game.shutdown()
-        
-if __name__ == '__main__':
-    _runserver()
