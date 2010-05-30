@@ -77,7 +77,7 @@ class Card(rpc.RPCSerializable):
     rpc_fields = ('suit', 'value')
 
     def __init__(self, suit, value):
-        super(Card, self).__init__(self)
+        super(Card, self).__init__()
         self.suit = suit
         self.value = value
         self.potential_owners = range(0, 4)
@@ -261,7 +261,7 @@ class GameState(rpc.RPCSerializable):
     rpc_fields = ('state', 'mode', 'table', 'score', 'tricks', 'turn')
 
     def __init__(self):
-        super(GameState, self).__init__(self)
+        super(GameState, self).__init__()
         self.state = STOPPED
         self.mode = NOLO
         self.table = CardSet()

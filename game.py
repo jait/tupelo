@@ -17,7 +17,7 @@ class GameController(object):
     """
 
     def __init__(self):
-        super(GameController, self).__init__(self)
+        super(GameController, self).__init__()
         self.players = []
         self.state = GameState()
         self.shutdown_event = threading.Event()

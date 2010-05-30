@@ -50,6 +50,7 @@ class TupeloXMLRPCInterface(object):
     """
 
     def __init__(self):
+        super(TupeloXMLRPCInterface, self).__init__()
         self.game = game.GameController()
 
     def _get_player(self, player_id):
@@ -209,7 +210,7 @@ class XMLRPCProxyController(object):
     Client-side proxy object for the server/GameController.
     """
     def __init__(self, server):
-        super(XMLRPCProxyController, self).__init__(self)
+        super(XMLRPCProxyController, self).__init__()
         self.server = server 
 
     @fault2error
