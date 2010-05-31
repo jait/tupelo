@@ -2,9 +2,7 @@
 # vim: set sts=4 sw=4 et:
 
 import logging
-import xmlrpclib
 import xmlrpc
-import rpc
 from optparse import OptionParser
 from players import CountingBotPlayer, DummyBotPlayer
 from game import GameController
@@ -16,12 +14,11 @@ def _run_remote(server_addr):
     if not server_addr.startswith('http://'):
         server_addr = 'http://' + server_addr
 
-    server = xmlrpclib.ServerProxy(server_addr)
-
-    player = xmlrpc.XMLRPCCliPlayer('Humaani', server)
-    player.id = server.register_player(rpc.rpc_encode(player))
+    game = xmlrpc.XMLRPCProxyController(server_addr)
+    player = xmlrpc.XMLRPCCliPlayer('Humaani')
+    game.register_player(player)
     player.start()
-    server.start_game_with_bots()
+    game.start_game_with_bots()
     
 def _run_local():
     """

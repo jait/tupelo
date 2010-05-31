@@ -177,9 +177,8 @@ class XMLRPCCliPlayer(players.CliPlayer):
     """
     XML-RPC command line interface human player.
     """
-    def __init__(self, player_name, server):
+    def __init__(self, player_name):
         players.CliPlayer.__init__(self, player_name)
-        self.controller = XMLRPCProxyController(server)
         self.game_state = None
         self.hand = None
 
@@ -207,9 +206,9 @@ class XMLRPCProxyController(object):
     """
     Client-side proxy object for the server/GameController.
     """
-    def __init__(self, server):
+    def __init__(self, server_uri):
         super(XMLRPCProxyController, self).__init__()
-        self.server = server 
+        self.server = xmlrpclib.ServerProxy(server_uri)
 
     @fault2error
     def play_card(self, player, card):
@@ -229,4 +228,13 @@ class XMLRPCProxyController(object):
     @fault2error
     def player_quit(self, player_id):
         self.server.player_quit(player_id)
+
+    @fault2error
+    def register_player(self, player):
+        player.controller = self
+        player.id = self.server.register_player(rpc.rpc_encode(player))
+
+    @fault2error
+    def start_game_with_bots(self):
+        return self.server.start_game_with_bots()
 
