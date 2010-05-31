@@ -6,7 +6,6 @@ from common import CardSet
 from common import NOLO, RAMI
 from common import STOPPED, VOTING, ONGOING
 from common import RuleError, GameError, GameState 
-from players import DummyBotPlayer, CountingBotPlayer, CliPlayer
 import threading
 import sys
 import copy
@@ -265,18 +264,3 @@ class GameController(object):
                 self.state.next_in_turn()
                 self.players[self.state.turn].act(self, self.state)
         
-if __name__ == '__main__':
-
-    format = "%(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=format)
-    game = GameController()
-
-    #game.register_player(CliPlayer('Ihminen'))
-    for i in range(0, 4):
-        if i % 2 == 0:
-            game.register_player(CountingBotPlayer('Lopotti %d' % i))
-        else:
-            game.register_player(DummyBotPlayer('Robotti %d' % i))
-
-    game.start_game()
-    game.wait_for_shutdown()
