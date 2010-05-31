@@ -142,7 +142,7 @@ class RPCProxyPlayer(players.Player):
            
     def card_played(self, player, card, game_state):
         # TODO: do we need a real event for this?
-        msg = '%s pelasi kortin %s ' % (player, card)
+        msg = '%s played %s ' % (player, card)
         self.send_message('', msg)
 
     def send_message(self, sender, msg):
