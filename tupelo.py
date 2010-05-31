@@ -9,14 +9,14 @@ from optparse import OptionParser
 from players import CountingBotPlayer, DummyBotPlayer
 from game import GameController
 
-def _run_remote(server):
+def _run_remote(server_addr):
     """
     Run, Forrest! Run!
     """
-    if not server.startswith('http://'):
-        server = 'http://' + server
+    if not server_addr.startswith('http://'):
+        server_addr = 'http://' + server_addr
 
-    server = xmlrpclib.ServerProxy(server)
+    server = xmlrpclib.ServerProxy(server_addr)
 
     player = xmlrpc.XMLRPCCliPlayer('Humaani', server)
     player.id = server.register_player(rpc.rpc_encode(player))
