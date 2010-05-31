@@ -2,12 +2,10 @@
 # vim: set sts=4 sw=4 et:
 
 import time
-from SimpleXMLRPCServer import SimpleXMLRPCServer
 import xmlrpclib
 import players
 import rpc
-from common import GameState, Card, CardSet, GameError, RuleError, UserQuit
-from common import STOPPED, VOTING, ONGOING
+from common import GameState, Card, CardSet, GameError, RuleError 
 import game
 
 DEFAULT_PORT = 8052
