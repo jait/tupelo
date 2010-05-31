@@ -107,7 +107,8 @@ class GameController(object):
 
         for player in self.players:
             player.hand.sort()
-            logging.debug("%s's hand " % player.player_name, player.hand)
+            logging.debug("%s's hand: %s" % (player.player_name, 
+                str(player.hand)))
 
         # voting 
         self.state.mode = NOLO
@@ -266,6 +267,8 @@ class GameController(object):
         
 if __name__ == '__main__':
 
+    format = "%(message)s"
+    logging.basicConfig(level=logging.DEBUG, format=format)
     game = GameController()
 
     #game.register_player(CliPlayer('Ihminen'))
