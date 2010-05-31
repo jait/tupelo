@@ -177,8 +177,8 @@ class DummyBotPlayer(Player):
             else:
                 # real dumb
                 card = choices.get_lowest()
-                high = state.table.get_highest()
-                if high is not None:
+                if len(state.table) > 0:
+                    high = state.table.get_cards(suit=state.table[0].suit).get_highest()
                     if high.played_by.team == self.team:
                         # we may be getting this trick...
                         if len(state.table) == 3:
@@ -213,8 +213,8 @@ class DummyBotPlayer(Player):
             else:
                 # real dumb
                 card = choices.get_highest()
-                high = state.table.get_highest()
-                if high is not None:
+                if len(state.table) > 0:
+                    high = state.table.get_cards(suit=state.table[0].suit).get_highest()
                     if high.played_by.team == self.team:
                         # we may be getting this trick...
                         card = choices.get_lowest()
