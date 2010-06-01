@@ -4,7 +4,7 @@
 import logging
 import xmlrpc
 from optparse import OptionParser
-from players import CountingBotPlayer, DummyBotPlayer
+from players import CliPlayer, CountingBotPlayer, DummyBotPlayer
 from game import GameController
 
 def _run_remote(server_addr):
@@ -28,8 +28,8 @@ def _run_local():
     logging.basicConfig(level=logging.DEBUG, format=format)
     game = GameController()
 
-    #game.register_player(CliPlayer('Ihminen'))
-    for i in range(0, 4):
+    game.register_player(CliPlayer('Ihminen'))
+    for i in range(0, 3):
         if i % 2 == 0:
             game.register_player(CountingBotPlayer('Lopotti %d' % i))
         else:
