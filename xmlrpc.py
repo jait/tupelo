@@ -112,7 +112,6 @@ class TupeloXMLRPCInterface(object):
     @error2fault
     def play_card(self, player_id, card):
         player = self._get_player(player_id)
-        print 'Player %s ' % player
         self.game.play_card(player, rpc.rpc_decode(Card, card))
         return True
 
