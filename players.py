@@ -5,7 +5,7 @@ import threading
 from common import CardSet, SPADE, CLUB, HEART, DIAMOND
 from common import NOLO, RAMI
 from common import STOPPED, VOTING, ONGOING
-from common import RuleError, UserQuit
+from common import RuleError, UserQuit, GameState
 import rpc
 
 class Player(threading.Thread, rpc.RPCSerializable):
@@ -22,7 +22,7 @@ class Player(threading.Thread, rpc.RPCSerializable):
         self.team = 0
         self.turn_event = threading.Event()
         self.controller = None
-        self.game_state = None
+        self.game_state = GameState()
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.player_name)
@@ -110,7 +110,7 @@ class Player(threading.Thread, rpc.RPCSerializable):
         the game state and wakes up the thread.
         """
         self.controller = controller
-        self.game_state = game_state
+        self.game_state.update(game_state)
         self.turn_event.set()
 
 
@@ -377,5 +377,5 @@ class CliPlayer(Player):
         if sender is not None:
             print '%s: %s' % (sender, msg)
         else:
-            print '%s'  % msg
+            print '%s' % msg
 
