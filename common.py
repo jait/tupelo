@@ -271,6 +271,14 @@ class GameState(rpc.RPCSerializable):
         self.turn = 0
         self.dealer = 0
 
+    def update(self, new_state):
+        """
+        Update the state from a new state object.
+        """
+        for attr in self.__dict__:
+            if hasattr(new_state, attr):
+                setattr(self, attr, getattr(new_state, attr))
+
     @classmethod
     def rpc_decode(cls, rpcobj):
         instance = cls.rpc_decode_simple(rpcobj)
