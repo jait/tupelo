@@ -46,13 +46,14 @@ class TupeloApp(QWidget):
         game.start_game()
         return game
 
+    def card_clicked(self, card):
+        self.text.appendPlainText("card %s clicked" % unicode(card))
+
     def draw_hand(self):
         for card in self.player.hand:
             gcard = QCard(card.suit, card.value, parent=self.hand.parentWidget())
+            gcard.clicked.connect(self.card_clicked)
             self.hand.addWidget(gcard)
-
-        #card = QCard(common.HEART, 14)
-        #hbox.addWidget(card)
 
     def quit_game(self):
         self.game.player_quit(self.player.id)

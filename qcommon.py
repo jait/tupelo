@@ -33,6 +33,8 @@ class SuitLabel(QLabel):
 
 class QCard(QWidget, Card):
 
+    clicked = QtCore.pyqtSignal(Card)
+
     def __init__(self, suit, value, parent=None):
         QWidget.__init__(self, parent)
         Card.__init__(self, suit, value)
@@ -46,6 +48,15 @@ class QCard(QWidget, Card):
         #policy = self.sizePolicy()
         #policy.setHeightForWidth(True)
         #self.setSizePolicy(policy)
+
+    def event(self, event):
+        retval = QWidget.event(self, event)
+
+        if event.type() == QtCore.QEvent.MouseButtonPress:
+            self.clicked.emit(self)
+            retval = True
+
+        return retval
 
 
 class GGameState(GameState, QtCore.QObject):
@@ -70,6 +81,11 @@ class GPlayer(CliPlayer, QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.game_state = GGameState()
         self.game_state.stateChanged.connect(self.state_changed)
+
+
+    def _pick_card(self, prompt='Pick a card'):
+        # TODO: do it
+        return CliPlayer._pick_card(self, prompt)
 
     def card_played(self, player, card, game_state):
         """
