@@ -168,6 +168,7 @@ class RPCProxyPlayer(players.Player):
         amount = self.msg_id - msg_id
         if amount < 0 or amount > len(self.messages):
             raise IndexError()
+
         ret = self.messages[:amount]
         self.messages = ret
         return ret
@@ -178,7 +179,7 @@ class XMLRPCCliPlayer(players.CliPlayer):
     """
     def __init__(self, player_name):
         players.CliPlayer.__init__(self, player_name)
-        self.game_state = None
+        self.game_state = GameState()
         self.hand = None
 
     def wait_for_turn(self):
@@ -191,7 +192,7 @@ class XMLRPCCliPlayer(players.CliPlayer):
 
             if self.controller is not None:
                 state = self.controller.get_state(self.id)
-                self.game_state = state['game_state']
+                self.game_state.update(state['game_state'])
                 self.hand = state['hand']
                 messages = self.controller.get_messages(self.id)
                 for msg in messages:
