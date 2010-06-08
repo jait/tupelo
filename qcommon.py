@@ -1,4 +1,5 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+# vim: set sts=4 sw=4 et:
 # -*- coding: utf-8 -*-
 #
 from PyQt4.QtGui import *
@@ -7,6 +8,7 @@ from common import Card, Suit
 from players import CliPlayer
 from common import STOPPED, VOTING, ONGOING
 from common import GameState
+import threading
 
 class SuitLabel(QLabel):
 
@@ -81,11 +83,40 @@ class GPlayer(CliPlayer, QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.game_state = GGameState()
         self.game_state.stateChanged.connect(self.state_changed)
+        self.card_event = threading.Event()
+        self.card_lock = threading.RLock()
 
+    def vote(self):
+        self.messageReceived.emit("It's voting time!")
+        self.card_lock.release()
+        self.card_event.wait()
+        self.card_event.clear()
+        self.card_lock.acquire()
 
-    def _pick_card(self, prompt='Pick a card'):
-        # TODO: do it
-        return CliPlayer._pick_card(self, prompt)
+    def play_card(self):
+        self.messageReceived.emit("Your turn.")
+        self.card_lock.release()
+        self.card_event.wait()
+        self.card_event.clear()
+        self.card_lock.acquire()
+
+    def run(self):
+        """
+        """
+        self.card_lock.acquire()
+        try:
+            CliPlayer.run(self)
+        finally:
+            self.card_lock.release()
+
+    def play_a_card(self, card):
+        # TODO: is there still a danger of deadlock here?
+        if self.card_lock.acquire(False) == True:
+            try:
+                self.controller.play_card(self, card)
+                self.card_event.set()
+            finally:
+                self.card_lock.release()
 
     def card_played(self, player, card, game_state):
         """
