@@ -1,4 +1,5 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+# vim: set sts=4 sw=4 et:
 # -*- coding: utf-8 -*-
 #
 import sys
@@ -48,6 +49,10 @@ class TupeloApp(QWidget):
 
     def card_clicked(self, card):
         self.text.appendPlainText("card %s clicked" % unicode(card))
+        try:
+            self.player.play_a_card(card)
+        except common.RuleError, rerror:
+            self.text.appendPlainText("Oops: %s" % str(rerror))
 
     def draw_hand(self):
         for card in self.player.hand:
