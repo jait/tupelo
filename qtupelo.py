@@ -20,6 +20,7 @@ class TupeloApp(QWidget):
         hbox = QHBoxLayout(self)
 
         self.hand_widget = QWidget()
+        self.hand = None
         self.hand = QHBoxLayout(self.hand_widget)
 
         hbox.addWidget(self.hand_widget)
@@ -36,6 +37,7 @@ class TupeloApp(QWidget):
         self.player = GPlayer('Ihiminen')
 
         self.player.messageReceived.connect(self.text.appendPlainText)
+        self.player.handChanged.connect(self.hand_changed)
         game.register_player(self.player)
 
         for i in range(1, 4):
@@ -54,7 +56,15 @@ class TupeloApp(QWidget):
         except common.RuleError, rerror:
             self.text.appendPlainText("Oops: %s" % str(rerror))
 
+    def hand_changed(self, hand):
+        self.draw_hand()
+
     def draw_hand(self):
+        # TODO: doesn't work
+        for widget in self.hand_widget.findChildren(QWidget):
+            del widget
+
+        #self.hand = QHBoxLayout(self.hand_widget)
         for card in self.player.hand:
             gcard = QCard(card.suit, card.value, parent=self.hand.parentWidget())
             gcard.clicked.connect(self.card_clicked)

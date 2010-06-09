@@ -7,7 +7,7 @@ from PyQt4 import QtCore
 from common import Card, Suit
 from players import CliPlayer
 from common import STOPPED, VOTING, ONGOING
-from common import GameState
+from common import GameState, CardSet
 import threading
 
 class SuitLabel(QLabel):
@@ -77,6 +77,7 @@ class GGameState(GameState, QtCore.QObject):
 class GPlayer(CliPlayer, QtCore.QObject):
 
     messageReceived = QtCore.pyqtSignal(str)
+    handChanged = QtCore.pyqtSignal(CardSet)
 
     def __init__(self, name):
         CliPlayer.__init__(self, name)
@@ -115,6 +116,7 @@ class GPlayer(CliPlayer, QtCore.QObject):
             try:
                 self.controller.play_card(self, card)
                 self.card_event.set()
+                self.handChanged.emit(self.hand)
             finally:
                 self.card_lock.release()
 
