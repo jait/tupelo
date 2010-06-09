@@ -60,11 +60,9 @@ class TupeloApp(QWidget):
         self.draw_hand()
 
     def draw_hand(self):
-        # TODO: doesn't work
         for widget in self.hand_widget.findChildren(QWidget):
-            del widget
+            widget.deleteLater()
 
-        #self.hand = QHBoxLayout(self.hand_widget)
         for card in self.player.hand:
             gcard = QCard(card.suit, card.value, parent=self.hand.parentWidget())
             gcard.clicked.connect(self.card_clicked)
