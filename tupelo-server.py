@@ -15,8 +15,8 @@ def _runserver():
             type="int", default=xmlrpc.DEFAULT_PORT,
             help="port number for the server")
     (opts, args) = parser.parse_args()
-    format = "server: %(message)s"
-    logging.basicConfig(level=logging.INFO, format=format)
+    logformat = "server: %(message)s"
+    logging.basicConfig(level=logging.INFO, format=logformat)
     server = SimpleXMLRPCServer(('localhost', opts.port))
     rpciface = xmlrpc.TupeloXMLRPCInterface()
     server.register_instance(rpciface)

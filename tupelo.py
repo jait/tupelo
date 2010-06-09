@@ -24,8 +24,8 @@ def _run_local():
     """
     Run, Forrest! Run!
     """
-    format = "%(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=format)
+    logformat = "%(message)s"
+    logging.basicConfig(level=logging.DEBUG, format=logformat)
     game = GameController()
 
     game.register_player(CliPlayer('Ihminen'))
