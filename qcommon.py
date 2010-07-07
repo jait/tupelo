@@ -83,7 +83,6 @@ class GPlayer(CliPlayer, QtCore.QObject):
         CliPlayer.__init__(self, name)
         QtCore.QObject.__init__(self)
         self.game_state = GGameState()
-        self.game_state.stateChanged.connect(self.state_changed)
         self.card_event = threading.Event()
         self.card_lock = threading.RLock()
 
@@ -143,7 +142,4 @@ class GPlayer(CliPlayer, QtCore.QObject):
             msgstr = msg
 
         self.messageReceived.emit(msgstr)
-
-    def state_changed(self, state):
-        self.messageReceived.emit("state_changed()")
 

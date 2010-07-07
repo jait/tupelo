@@ -38,6 +38,7 @@ class TupeloApp(QWidget):
 
         self.player.messageReceived.connect(self.text.appendPlainText)
         self.player.handChanged.connect(self.hand_changed)
+        self.player.game_state.stateChanged.connect(self.state_changed)
         game.register_player(self.player)
 
         for i in range(1, 4):
@@ -59,6 +60,10 @@ class TupeloApp(QWidget):
     def hand_changed(self, hand):
         self.draw_hand()
 
+    def state_changed(self, state):
+        self.text.appendPlainText("state_changed(): %s" % str(state))
+        self.draw_hand()
+
     def draw_hand(self):
         for widget in self.hand_widget.findChildren(QWidget):
             widget.deleteLater()
@@ -71,19 +76,22 @@ class TupeloApp(QWidget):
     def quit_game(self):
         self.game.player_quit(self.player.id)
         
-            
-# Every PyQt4 application must create an application object.
-# The application object is located in the QtGui module.
-app = QApplication(sys.argv)
- 
-format = "%(message)s"
-logging.basicConfig(level=logging.INFO, format=format)
 
-win = TupeloApp()
-win.show()
+def main():
+    # Every PyQt4 application must create an application object.
+    # The application object is located in the QtGui module.
+    app = QApplication(sys.argv)
 
-ret = app.exec_()
-win.quit_game()
+    format = "%(message)s"
+    logging.basicConfig(level=logging.INFO, format=format)
 
-sys.exit(ret)  # Finally, we enter the mainloop of the application.
+    win = TupeloApp()
+    win.show()
 
+    ret = app.exec_()
+    win.quit_game()
+
+    sys.exit(ret)  # Finally, we enter the mainloop of the application.
+
+if __name__ == '__main__':
+    main()
