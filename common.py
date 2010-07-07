@@ -296,3 +296,10 @@ class GameState(rpc.RPCSerializable):
         else:
             self.turn = (next) % 4
 
+    def __str__(self):
+        statestr = {STOPPED: 'STOPPED', VOTING: 'VOTING', ONGOING: 'ONGOING'}
+        modestr = {NOLO: 'NOLO', RAMI: 'RAMI'}
+        return "state: %s, mode: %s, turn: %d, dealer: %d" % \
+                (statestr[self.state], modestr[self.mode], self.turn,
+                        self.dealer)
+
