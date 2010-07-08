@@ -33,7 +33,7 @@ class SuitLabel(QLabel):
     def heightForWidth(self, w):
         return w
 
-class QCard(QWidget, Card):
+class GCard(QWidget, Card):
 
     clicked = QtCore.pyqtSignal(Card)
 

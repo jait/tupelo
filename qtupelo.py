@@ -5,7 +5,7 @@
 import sys
 from PyQt4.QtGui import *
 from PyQt4.QtCore import Qt
-from qcommon import QCard, GPlayer
+from qcommon import GCard, GPlayer
 import common
 import logging
 from game import GameController
@@ -32,7 +32,7 @@ class GTable(QWidget):
         # place where we start drawing
         index = (my_place - len(cardset)) % 4
         for card in cardset:
-            gcard = QCard(card.suit, card.value, parent=self)
+            gcard = GCard(card.suit, card.value, parent=self)
             place = places[index]
             self.layout().addWidget(gcard, place[0], place[1])
             index = (index + 1) % 4
@@ -113,7 +113,7 @@ class TupeloApp(QWidget):
             widget.deleteLater()
 
         for card in self.player.hand:
-            gcard = QCard(card.suit, card.value, parent=self.hand.parentWidget())
+            gcard = GCard(card.suit, card.value, parent=self.hand.parentWidget())
             gcard.clicked.connect(self.card_clicked)
             self.hand.addWidget(gcard)
 
