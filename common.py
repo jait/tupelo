@@ -299,7 +299,7 @@ class GameState(rpc.RPCSerializable):
     def __str__(self):
         statestr = {STOPPED: 'STOPPED', VOTING: 'VOTING', ONGOING: 'ONGOING'}
         modestr = {NOLO: 'NOLO', RAMI: 'RAMI'}
-        return "state: %s, mode: %s, turn: %d, dealer: %d" % \
-                (statestr[self.state], modestr[self.mode], self.turn,
-                        self.dealer)
+        return "state: %s, mode: %s, score: %s, tricks: %s, dealer: %d" % \
+                (statestr[self.state], modestr[self.mode], str(self.score),
+                        str(self.tricks), self.dealer)
 
