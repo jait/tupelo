@@ -3,8 +3,9 @@
 # -*- coding: utf-8 -*-
 #
 import sys
+import time
 from PyQt4.QtGui import *
-from PyQt4.QtCore import Qt
+from PyQt4.QtCore import *
 from qcommon import GCard, GPlayer
 import common
 import logging
@@ -75,6 +76,7 @@ class TupeloApp(QWidget):
         self.player.messageReceived.connect(self.append_text)
         self.player.handChanged.connect(self.hand_changed)
         self.player.game_state.stateChanged.connect(self.state_changed)
+        self.player.game_state.trickPlayed.connect(self.trick_played)
         game.register_player(self.player)
 
         for i in range(1, 4):
@@ -87,7 +89,7 @@ class TupeloApp(QWidget):
         return game
 
     def card_clicked(self, card):
-        self.append_text("card %s clicked" % unicode(card))
+        #self.append_text("card %s clicked" % unicode(card))
         try:
             self.player.play_a_card(card)
         except common.RuleError, rerror:
@@ -103,10 +105,22 @@ class TupeloApp(QWidget):
         sbar.setValue(sbar.maximum())
 
     def state_changed(self, state):
-        self.append_text("state_changed(): %s" % str(state))
+        self.append_text("state_changed(): %s, len(table): %d" % \
+                (str(state), len(state.table)))
         self.status_area.setText(str(state))
         self.table.draw_cards(state.table)
         self.draw_hand()
+
+    def trick_played(self, state):
+        self.append_text("trick played, sleeping")
+        self.append_text("table: %s" % str(state.table))
+        print "table: %s" % str(state.table)
+        # TODO: there must be a better way to implement the delay
+        QTimer.singleShot(0, self.sleep)
+
+    def sleep(self):
+        print "sleeping"
+        time.sleep(2)
 
     def draw_hand(self):
         for widget in self.hand_widget.findChildren(QWidget):

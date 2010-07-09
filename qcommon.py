@@ -64,6 +64,7 @@ class GCard(QWidget, Card):
 class GGameState(GameState, QtCore.QObject):
 
     stateChanged = QtCore.pyqtSignal(GameState)
+    trickPlayed = QtCore.pyqtSignal(GameState)
 
     def __init__(self):
         GameState.__init__(self)
@@ -72,6 +73,8 @@ class GGameState(GameState, QtCore.QObject):
     def update(self, new_state):
         GameState.update(self, new_state)
         self.stateChanged.emit(self)
+        if len(self.table) == 4:
+            self.trickPlayed.emit(self)
 
         
 class GPlayer(CliPlayer, QtCore.QObject):
@@ -134,6 +137,7 @@ class GPlayer(CliPlayer, QtCore.QObject):
             msg = '%s played %s' % (player_str, card)
 
         self.messageReceived.emit(msg)
+        self.game_state.update(game_state)
     
     def send_message(self, sender, msg):
         if sender is not None:
