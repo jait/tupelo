@@ -208,26 +208,34 @@ class GameController(object):
         card = copy.copy(card)
         card.played_by = player
         table.append(card)
-        self.state.next_in_turn()
-        if len(table) == 4:
-            for card in table:
-                # fire signals
-                for plr in self.players:
-                    plr.card_played(card.played_by, card, self.state)
-                if card.suit == common.DIAMOND or card.suit == common.HEART:
-                    self.state.mode = RAMI
-                    self.state.rami_chosen_by = player
-                    self.state.next_in_turn(card.played_by.id - 1)
-                    break
-            table.clear()
-            if self.state.mode == NOLO:
-                self._send_msg('Nolo it is')
-            else:
-                self._send_msg('Rami it is')
-            self.state.state = ONGOING
-            self._send_msg('Game on, %s begins!' % self.players[self.state.turn])
+        # fire signals
+        for plr in self.players:
+            plr.card_played(card.played_by, card, self.state)
+
+        if card.suit == common.DIAMOND or card.suit == common.HEART:
+            self.state.mode = RAMI
+            self.state.rami_chosen_by = player
+            self.state.next_in_turn(card.played_by.id - 1)
+            self._begin_game()
+        elif len(table) == 4:
+            self.state.mode = NOLO
+            self.state.next_in_turn()
+            self._begin_game()
+        else:
+            self.state.next_in_turn()
 
         self.players[self.state.turn].act(self, self.state)
+
+    def _begin_game(self):
+        if self.state.mode == RAMI:
+            self._send_msg('Rami it is')
+        else:
+            self._send_msg('Nolo it is')
+
+        self._send_msg('Game on, %s begins!' % self.players[self.state.turn])
+
+        self.state.table.clear()
+        self.state.state = ONGOING
             
     def play_card(self, player, card):
         """
