@@ -8,19 +8,18 @@ from common import STOPPED, VOTING, ONGOING
 from common import RuleError, UserQuit, GameState
 import rpc
 
-class Player(threading.Thread, rpc.RPCSerializable):
+class Player(rpc.RPCSerializable):
     """
+    Base class for players.
     """
     rpc_fields = ('id', 'player_name', 'team')
 
     def __init__(self, name):
         self.id = -1
-        threading.Thread.__init__(self, None, None, name)
         rpc.RPCSerializable.__init__(self)
         self.player_name = name
         self.hand = CardSet()
         self.team = 0
-        self.turn_event = threading.Event()
         self.controller = None
         self.game_state = GameState()
 
@@ -43,6 +42,50 @@ class Player(threading.Thread, rpc.RPCSerializable):
         Decode an RPC-form object into an instance of cls.
         """
         return cls(rpcobj['player_name'])
+
+    def card_played(self, player, card, game_state):
+        """
+        Signal that a card has been played by the given player.
+        """
+        pass
+
+    def vote(self):
+        """
+        Vote for rami or nolo.
+        """
+        print 'Not implemented!'
+        raise NotImplementedError()
+
+    def play_card(self):
+        """
+        Play one card.
+        """
+        print 'Not implemented!'
+        raise NotImplementedError()
+
+    def send_message(self, sender, msg):
+        """
+        """
+        print 'Not implemented!'
+        raise NotImplementedError()
+
+    def act(self, controller, game_state):
+        """
+        Do something.
+
+        This is an event handler that updates
+        the game state and wakes up the thread.
+        """
+        print 'Not implemented!'
+        raise NotImplementedError()
+
+
+class ThreadedPlayer(threading.Thread, Player):
+
+    def __init__(self, name):
+        threading.Thread.__init__(self, None, None, name)
+        Player.__init__(self, name)
+        self.turn_event = threading.Event()
 
     def wait_for_turn(self):
         """
@@ -86,32 +129,6 @@ class Player(threading.Thread, rpc.RPCSerializable):
         
         print '%s exiting' % self
 
-    def card_played(self, player, card, game_state):
-        """
-        Signal that a card has been played by the given player.
-        """
-        pass
-
-    def vote(self):
-        """
-        Vote for rami or nolo.
-        """
-        print 'Not implemented!'
-        raise NotImplementedError()
-       
-    def play_card(self):
-        """
-        Play one card.
-        """
-        print 'Not implemented!'
-        raise NotImplementedError()
-
-    def send_message(self, sender, msg):
-        """
-        """
-        print 'Not implemented!'
-        raise NotImplementedError()
-
     def act(self, controller, game_state):
         """
         Do something.
@@ -123,8 +140,7 @@ class Player(threading.Thread, rpc.RPCSerializable):
         self.game_state.update(game_state)
         self.turn_event.set()
 
-
-class DummyBotPlayer(Player):
+class DummyBotPlayer(ThreadedPlayer):
     """
     Dummy robot player.
     """
@@ -287,7 +303,7 @@ class CountingBotPlayer(DummyBotPlayer):
                 print "Oops: removing card %s failed" % str(card)
 
 
-class CliPlayer(Player):
+class CliPlayer(ThreadedPlayer):
     """
     Command line interface human player.
     """

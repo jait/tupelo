@@ -114,12 +114,12 @@ class TupeloXMLRPCInterface(object):
         return True
 
 
-class RPCProxyPlayer(players.Player):
+class RPCProxyPlayer(players.ThreadedPlayer):
     """
     Server-side class for remote/RPC players.
     """
     def __init__(self, name):
-        players.Player.__init__(self, name)
+        players.ThreadedPlayer.__init__(self, name)
         self.events = Queue.Queue()
 
     def vote(self):
