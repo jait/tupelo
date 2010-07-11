@@ -27,6 +27,16 @@ class Player(threading.Thread, rpc.RPCSerializable):
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.player_name)
 
+    def __getstate__(self):
+        """
+        Make Player classes safe for pickling and deepcopying.
+        """
+        state = {}
+        for key in self.rpc_fields:
+            state[key] = getattr(self, key)
+
+        return state
+
     @classmethod
     def rpc_decode(cls, rpcobj):
         """
