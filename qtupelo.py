@@ -13,11 +13,12 @@ from game import GameController
 from players import DummyBotPlayer, CountingBotPlayer
 
 class GTable(QWidget):
+
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         self.setLayout(QGridLayout())
 
-    def draw_cards(self, cardset):
+    def draw_cards(self, cardset, player_id):
         # (row, col)
         left = (1, 0)
         top = (0, 1)
@@ -31,7 +32,16 @@ class GTable(QWidget):
             widget.deleteLater()
 
         # place where we start drawing
-        index = (my_place - len(cardset)) % 4
+        my_card = None
+        for card in cardset:
+            if card.played_by.id == player_id:
+                my_card = cardset.index(card)
+
+        if my_card is not None:
+            index = (my_place - my_card) % 4
+        else:
+            index = (my_place - len(cardset)) % 4
+
         for card in cardset:
             gcard = GCard(card.suit, card.value, parent=self)
             place = places[index]
@@ -108,7 +118,7 @@ class TupeloApp(QWidget):
         self.append_text("state_changed(): %s, len(table): %d" % \
                 (str(state), len(state.table)))
         self.status_area.setText(str(state))
-        self.table.draw_cards(state.table)
+        self.table.draw_cards(state.table, self.player.id)
         self.draw_hand()
 
     def trick_played(self, state):
