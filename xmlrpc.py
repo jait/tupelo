@@ -5,7 +5,9 @@ import time
 import xmlrpclib
 import players
 import rpc
-from common import GameState, Card, CardSet, GameError, RuleError 
+from common import GameState, Card, CardSet, GameError, RuleError
+from events import EventList, CardPlayedEvent, MessageEvent
+import Queue
 import game
 
 DEFAULT_PORT = 8052
@@ -94,6 +96,10 @@ class TupeloXMLRPCInterface(object):
     @error2fault
     def get_messages_since(self, player_id, last_msg_id):
         return self._get_player(player_id).get_messages_since(last_msg_id)
+
+    @error2fault
+    def get_events(self, player_id):
+        return rpc.rpc_encode(self._get_player(player_id).pop_events())
          
     @error2fault
     def start_game(self):
@@ -124,6 +130,7 @@ class RPCProxyPlayer(players.Player):
         players.Player.__init__(self, name)
         self.messages = []
         self.msg_id = 0
+        self.events = Queue.Queue()
 
     def vote(self):
         """
@@ -138,16 +145,15 @@ class RPCProxyPlayer(players.Player):
         pass
            
     def card_played(self, player, card, game_state):
-        # TODO: do we need a real event for this?
-        msg = '%s played %s ' % (player, card)
-        self.send_message('', msg)
+        self.send_event(CardPlayedEvent(player, card, game_state))
 
     def send_message(self, sender, msg):
         """
         """
-        self.messages.insert(0, (sender, msg))
+        self.send_event(MessageEvent(sender, msg))
+        #self.messages.insert(0, (sender, msg))
         # TODO: rollover?
-        self.msg_id += 1
+        #self.msg_id += 1
 
     def pop_message(self):
         """
@@ -173,6 +179,20 @@ class RPCProxyPlayer(players.Player):
         self.messages = ret
         return ret
 
+    def send_event(self, event):
+        self.events.put(event)
+
+    def pop_events(self):
+        eventlist = EventList()
+        try:
+            while True:
+                eventlist.append(self.events.get_nowait())
+        except Queue.Empty:
+            pass
+
+        return eventlist
+
+
 class XMLRPCCliPlayer(players.CliPlayer):
     """
     XML-RPC command line interface human player.
@@ -181,6 +201,14 @@ class XMLRPCCliPlayer(players.CliPlayer):
         players.CliPlayer.__init__(self, player_name)
         self.game_state = GameState()
         self.hand = None
+
+    def handle_event(self, event):
+        if isinstance(event, CardPlayedEvent):
+            self.card_played(event.player, event.card, event.game_state)
+        elif isinstance(event, MessageEvent):
+            print '%s: %s' % (event.sender, event.message)
+        else:
+            print "unknown event: %s" % event
 
     def wait_for_turn(self):
         """
@@ -198,9 +226,12 @@ class XMLRPCCliPlayer(players.CliPlayer):
                 for msg in messages:
                     print '%s: %s' % (msg[0], msg[1])
 
+                events = self.controller.get_events(self.id)
+                for event in events:
+                    self.handle_event(event)
+
             if self.game_state.turn == self.id:
                 break
-
 
 class XMLRPCProxyController(object):
     """
@@ -217,6 +248,10 @@ class XMLRPCProxyController(object):
     @fault2error
     def get_messages(self, player_id):
         return self.server.get_messages(player_id)
+
+    @fault2error
+    def get_events(self, player_id):
+        return rpc.rpc_decode(EventList, self.server.get_events(player_id))
 
     @fault2error
     def get_state(self, player_id):
