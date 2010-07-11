@@ -271,7 +271,10 @@ class CountingBotPlayer(DummyBotPlayer):
             pass
         elif game_state.state == ONGOING:
             #print "removing %s  from %s" %(card, self.cards_left)
-            self.cards_left.remove(card)
+            try:
+                self.cards_left.remove(card)
+            except ValueError:
+                print "Oops: removing card %s failed" % str(card)
 
 
 class CliPlayer(Player):
