@@ -87,6 +87,9 @@ class GameController(object):
         """
         self.shutdown_event.wait()
         self.shutdown()
+
+    def _signal_act(self):
+        self.players[self.state.turn].act(self, self.state)
             
     def _start_new_hand(self):
         """
@@ -118,7 +121,7 @@ class GameController(object):
         #self.state.state = ONGOING
         # start the game
         self.state.next_in_turn(self.state.dealer + 1)
-        self.players[self.state.turn].act(self, self.state)
+        self._signal_act()
 
     def _trick_played(self):
         """
@@ -137,7 +140,7 @@ class GameController(object):
             self._hand_played()
         else:
             self.state.next_in_turn(high.played_by.id)
-            self.players[self.state.turn].act(self, self.state)
+            self._signal_act()
 
     def _hand_played(self):
         """
@@ -224,7 +227,7 @@ class GameController(object):
         else:
             self.state.next_in_turn()
 
-        self.players[self.state.turn].act(self, self.state)
+        self._signal_act()
 
     def _begin_game(self):
         if self.state.mode == RAMI:
@@ -262,13 +265,22 @@ class GameController(object):
             except ValueError:
                 raise RuleError('Invalid card')
 
-            # fire signals
-            for plr in self.players:
-                plr.card_played(player, card, self.state)
-
             if len(table) == 4:
+                # TODO: there must be a better way for this
+                turn_backup = self.state.turn
+                self.state.turn = None
+                # fire signals with temporary state
+                # this is to let clients know that all four cards have been played
+                # and it's nobody's turn yet
+                for plr in self.players:
+                    plr.card_played(player, card, self.state)
+
+                self.state.turn = turn_backup
                 self._trick_played()
             else:
                 self.state.next_in_turn()
-                self.players[self.state.turn].act(self, self.state)
+                # fire signals
+                for plr in self.players:
+                    plr.card_played(player, card, self.state)
+                self._signal_act()
         
