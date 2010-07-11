@@ -90,14 +90,6 @@ class TupeloXMLRPCInterface(object):
         return response
 
     @error2fault
-    def get_messages(self, player_id):
-        return self._get_player(player_id).pop_messages()
-
-    @error2fault
-    def get_messages_since(self, player_id, last_msg_id):
-        return self._get_player(player_id).get_messages_since(last_msg_id)
-
-    @error2fault
     def get_events(self, player_id):
         return rpc.rpc_encode(self._get_player(player_id).pop_events())
          
@@ -128,8 +120,6 @@ class RPCProxyPlayer(players.Player):
     """
     def __init__(self, name):
         players.Player.__init__(self, name)
-        self.messages = []
-        self.msg_id = 0
         self.events = Queue.Queue()
 
     def vote(self):
@@ -151,33 +141,6 @@ class RPCProxyPlayer(players.Player):
         """
         """
         self.send_event(MessageEvent(sender, msg))
-        #self.messages.insert(0, (sender, msg))
-        # TODO: rollover?
-        #self.msg_id += 1
-
-    def pop_message(self):
-        """
-        """
-        return self.messages.pop()
-
-    def pop_messages(self):
-        msgs = []
-        # TODO: race conditions?
-        while len(self.messages) > 0:
-            msgs.append(self.pop_message())
-
-        return msgs
-
-    def get_messages_since(self, msg_id):
-        """
-        """
-        amount = self.msg_id - msg_id
-        if amount < 0 or amount > len(self.messages):
-            raise IndexError()
-
-        ret = self.messages[:amount]
-        self.messages = ret
-        return ret
 
     def send_event(self, event):
         self.events.put(event)
@@ -222,9 +185,6 @@ class XMLRPCCliPlayer(players.CliPlayer):
                 state = self.controller.get_state(self.id)
                 self.game_state.update(state['game_state'])
                 self.hand = state['hand']
-                messages = self.controller.get_messages(self.id)
-                for msg in messages:
-                    print '%s: %s' % (msg[0], msg[1])
 
                 events = self.controller.get_events(self.id)
                 for event in events:
@@ -244,10 +204,6 @@ class XMLRPCProxyController(object):
     @fault2error
     def play_card(self, player, card):
         self.server.play_card(player.id, rpc.rpc_encode(card))
-
-    @fault2error
-    def get_messages(self, player_id):
-        return self.server.get_messages(player_id)
 
     @fault2error
     def get_events(self, player_id):
