@@ -169,7 +169,7 @@ class XMLRPCCliPlayer(players.CliPlayer):
         if isinstance(event, CardPlayedEvent):
             self.card_played(event.player, event.card, event.game_state)
         elif isinstance(event, MessageEvent):
-            print '%s: %s' % (event.sender, event.message)
+            self.send_message(event.sender, event.message)
         else:
             print "unknown event: %s" % event
 
