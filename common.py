@@ -14,6 +14,7 @@ STOPPED = 0
 VOTING = 1
 ONGOING = 2
 
+TURN_NONE = -1
 
 class GameError(Exception):
     """
@@ -74,7 +75,7 @@ class Card(rpc.RPCSerializable):
     Class that represents a single card.
     """
     _chars = {11:'J', 12:'Q', 13:'K', 14:'A'}
-    rpc_fields = ('suit', 'value')
+    rpc_fields = ('suit', 'value', 'played_by')
 
     def __init__(self, suit, value):
         super(Card, self).__init__()

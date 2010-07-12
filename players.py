@@ -49,6 +49,12 @@ class Player(rpc.RPCSerializable):
         """
         pass
 
+    def trick_played(self, player, game_state):
+        """
+        Signal that a trick has been played. "player" had the winning card.
+        """
+        pass
+
     def vote(self):
         """
         Vote for rami or nolo.

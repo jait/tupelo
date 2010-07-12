@@ -4,7 +4,7 @@
 import common
 from common import CardSet
 from common import NOLO, RAMI
-from common import STOPPED, VOTING, ONGOING
+from common import STOPPED, VOTING, ONGOING, TURN_NONE
 from common import RuleError, GameError, GameState 
 import players
 import threading
@@ -170,6 +170,10 @@ class GameController(object):
         self._send_msg('Team %s takes this trick' % (self._get_team_str(team)))
         self.state.tricks[team] += 1
         self._send_msg('Tricks: %s' % self.state.tricks)
+        # send signals
+        for plr in self.players:
+            plr.trick_played(high.played_by, self.state)
+
         self.state.table.clear()
 
         # do we have a winner?
@@ -298,7 +302,7 @@ class GameController(object):
             if len(table) == 4:
                 # TODO: there must be a better way for this
                 turn_backup = self.state.turn
-                self.state.turn = None
+                self.state.turn = TURN_NONE
                 # fire signals with temporary state
                 # this is to let clients know that all four cards have been played
                 # and it's nobody's turn yet

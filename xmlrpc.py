@@ -6,9 +6,10 @@ import xmlrpclib
 import players
 import rpc
 from common import GameState, Card, CardSet, GameError, RuleError
-from events import EventList, CardPlayedEvent, MessageEvent
+from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent
 import Queue
 import game
+import copy
 
 DEFAULT_PORT = 8052
 
@@ -136,7 +137,10 @@ class RPCProxyPlayer(players.ThreadedPlayer):
         pass
            
     def card_played(self, player, card, game_state):
-        self.send_event(CardPlayedEvent(player, card, game_state))
+        self.send_event(CardPlayedEvent(player, card, copy.deepcopy(game_state)))
+
+    def trick_played(self, player, game_state):
+        self.send_event(TrickPlayedEvent(player, copy.deepcopy(game_state)))
 
     def send_message(self, sender, msg):
         """
@@ -171,6 +175,8 @@ class XMLRPCCliPlayer(players.CliPlayer):
             self.card_played(event.player, event.card, event.game_state)
         elif isinstance(event, MessageEvent):
             self.send_message(event.sender, event.message)
+        elif isinstance(event, TrickPlayedEvent):
+            self.trick_played(event.player, event.game_state)
         else:
             print "unknown event: %s" % event
 
@@ -193,6 +199,7 @@ class XMLRPCCliPlayer(players.CliPlayer):
 
             if self.game_state.turn == self.id:
                 break
+
 
 class XMLRPCProxyController(object):
     """

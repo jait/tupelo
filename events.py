@@ -58,6 +58,25 @@ class MessageEvent(Event):
         self.message = message
 
 
+class TrickPlayedEvent(Event):
+    """
+    A card has been played.
+    """
+    type = 3
+    rpc_fields = Event.rpc_fields + ('player', 'game_state')
+
+    def __init__(self, player=None, game_state=None):
+       self.player = player
+       self.game_state = game_state
+
+    @classmethod
+    def rpc_decode(cls, rpcobj):
+        instance = cls.rpc_decode_simple(rpcobj)
+        instance.player = rpc.rpc_decode(Player, rpcobj['player'])
+        instance.game_state = rpc.rpc_decode(GameState, rpcobj['game_state'])
+        return instance
+
+
 class EventList(list, rpc.RPCSerializable):
     """
     Class for event lists.
