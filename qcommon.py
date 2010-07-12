@@ -7,7 +7,7 @@ from PyQt4 import QtCore
 from common import Card, Suit
 from players import CliPlayer
 from common import STOPPED, VOTING, ONGOING
-from common import GameState, CardSet
+from common import GameState, CardSet, UserQuit
 import threading
 
 class SuitLabel(QLabel):
@@ -86,41 +86,60 @@ class GPlayer(CliPlayer, QtCore.QObject):
         CliPlayer.__init__(self, name)
         QtCore.QObject.__init__(self)
         self.game_state = GGameState()
-        self.card_event = threading.Event()
-        self.card_lock = threading.RLock()
+        self._card_event = threading.Event()
+        self._card_lock = threading.RLock()
+        self._quit = False
 
     def vote(self):
         self.messageReceived.emit("It's voting time!")
-        self.card_lock.release()
-        self.card_event.wait()
-        self.card_event.clear()
-        self.card_lock.acquire()
+        self._card_lock.release()
+        try:
+            self._wait_for_card()
+        finally:
+            self._card_lock.acquire()
 
     def play_card(self):
         self.messageReceived.emit("Your turn.")
-        self.card_lock.release()
-        self.card_event.wait()
-        self.card_event.clear()
-        self.card_lock.acquire()
+        self._card_lock.release()
+        try:
+            self._wait_for_card()
+        finally:
+            self._card_lock.acquire()
+
+    def _wait_for_card(self):
+        """
+        Wait for the user to play a card.
+        """
+        self._card_event.wait()
+        self._card_event.clear()
+        if self._quit:
+            raise UserQuit()
 
     def run(self):
         """
         """
-        self.card_lock.acquire()
+        self._card_lock.acquire()
         try:
             CliPlayer.run(self)
         finally:
-            self.card_lock.release()
+            self._card_lock.release()
+
+    def quit(self):
+        """
+        Set quit flag and wake up the thread if waiting.
+        """
+        self._quit = True
+        self._card_event.set()
 
     def play_a_card(self, card):
         # TODO: is there still a danger of deadlock here?
-        if self.card_lock.acquire(False) == True:
+        if self._card_lock.acquire(False) == True:
             try:
                 self.controller.play_card(self, card)
-                self.card_event.set()
+                self._card_event.set()
                 self.handChanged.emit(self.hand)
             finally:
-                self.card_lock.release()
+                self._card_lock.release()
 
     def card_played(self, player, card, game_state):
         """

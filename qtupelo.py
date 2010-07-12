@@ -75,7 +75,7 @@ class TupeloApp(QWidget):
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)
         hbox.addWidget(self.text)
-        self.game = self.create_game()
+        self.create_game()
         self.draw_hand()
        
     def create_game(self):
@@ -96,7 +96,6 @@ class TupeloApp(QWidget):
                 game.register_player(DummyBotPlayer('Robotti %d' % i))
 
         game.start_game()
-        return game
 
     def card_clicked(self, card):
         #self.append_text("card %s clicked" % unicode(card))
@@ -142,7 +141,7 @@ class TupeloApp(QWidget):
             self.hand.addWidget(gcard)
 
     def quit_game(self):
-        self.game.player_quit(self.player.id)
+        self.player.quit()
         
 
 def main():
