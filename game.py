@@ -6,6 +6,7 @@ from common import CardSet
 from common import NOLO, RAMI
 from common import STOPPED, VOTING, ONGOING
 from common import RuleError, GameError, GameState 
+import players
 import threading
 import sys
 import copy
@@ -33,18 +34,54 @@ class GameController(object):
         player.id = self.players.index(player)
         player.team = player.id % 2
 
-    def player_quit(self, player):
+    def player_leave(self, player_id):
         """
-        Player quits.
+        Player leaves the game.
         """
-        self._send_msg('Player %s quit' % player)
+        self._send_msg('Player %s quit' % player_id)
+        plr = self.get_player(player_id)
+        if plr:
+            self.players.remove(plr)
+
         self._reset()
+
+    def player_quit(self, player_id):
+        """
+        Leave and quit the game.
+        """
+        self.player_leave(player_id)
+        self.shutdown_event.set()
+
+    def get_player(self, player_id):
+        """
+        Get player by id.
+        """
+        for plr in self.players:
+            if plr.id == player_id:
+                return plr
+
+        return None
+
+    def _stop_players(self):
+        """
+        Stop all running players.
+        """
+        self.state.state = STOPPED
+        for player in self.players:
+            if player:
+                player.act(self, self.state)
+
+        for player in self.players:
+            if player and isinstance(player, players.ThreadedPlayer):
+                if player.isAlive() and player is not threading.current_thread():
+                    player.join()
 
     def _reset(self):
         """
         Reset the game.
         """
         logging.info('Resetting')
+        self._stop_players()
         self.players = []
         self.state = GameState()
 
@@ -89,7 +126,7 @@ class GameController(object):
         self.shutdown()
 
     def _signal_act(self):
-        self.players[self.state.turn].act(self, self.state)
+        self.get_player(self.state.turn).act(self, self.state)
             
     def _start_new_hand(self):
         """
@@ -192,14 +229,7 @@ class GameController(object):
         """
         Shutdown the game.
         """
-        self.state.state = STOPPED
-        for player in self.players:
-            player.act(self, self.state)
-
-        for player in self.players:
-            if player.isAlive():
-                player.join()
-
+        self._stop_players()
         sys.exit(0)
 
     def _vote_card(self, player, card):
@@ -235,7 +265,7 @@ class GameController(object):
         else:
             self._send_msg('Nolo it is')
 
-        self._send_msg('Game on, %s begins!' % self.players[self.state.turn])
+        self._send_msg('Game on, %s begins!' % self.get_player(self.state.turn))
 
         self.state.table.clear()
         self.state.state = ONGOING

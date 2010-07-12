@@ -78,7 +78,8 @@ class TupeloXMLRPCInterface(object):
         """
         Player quits.
         """
-        self.game.player_quit(self._get_player(player_id))
+        # leave the game but don't make the server quit
+        self.game.player_leave(self._get_player(player_id))
         # without allow_none, XMLRPC methods must always return something
         return True
 
