@@ -5,9 +5,10 @@
 from PyQt4.QtGui import *
 from PyQt4 import QtCore
 from common import Card, Suit
-from players import CliPlayer
+from players import Player, CliPlayer
 from common import STOPPED, VOTING, ONGOING
 from common import GameState, CardSet, UserQuit
+from xmlrpc import XMLRPCCliPlayer
 import threading
 
 class SuitLabel(QLabel):
@@ -76,15 +77,16 @@ class GGameState(GameState, QtCore.QObject):
         if len(self.table) == 4:
             self.trickPlayed.emit(self)
 
-        
-class GPlayer(CliPlayer, QtCore.QObject):
+
+class _GPlayerBase(QtCore.QObject):
 
     messageReceived = QtCore.pyqtSignal(str)
     handChanged = QtCore.pyqtSignal(CardSet)
+    trickPlayed = QtCore.pyqtSignal(Player, GameState)
 
-    def __init__(self, name):
-        CliPlayer.__init__(self, name)
+    def __init__(self, base):
         QtCore.QObject.__init__(self)
+        self.base = base
         self.game_state = GGameState()
         self._card_event = threading.Event()
         self._card_lock = threading.RLock()
@@ -120,7 +122,7 @@ class GPlayer(CliPlayer, QtCore.QObject):
         """
         self._card_lock.acquire()
         try:
-            CliPlayer.run(self)
+            self.base.run(self)
         finally:
             self._card_lock.release()
 
@@ -157,7 +159,10 @@ class GPlayer(CliPlayer, QtCore.QObject):
 
         self.messageReceived.emit(msg)
         self.game_state.update(game_state)
-    
+
+    def trick_played(self, player, game_state):
+        self.trickPlayed.emit(player, game_state)
+
     def send_message(self, sender, msg):
         if sender is not None:
             msgstr = '%s: %s' % (sender, msg)
@@ -165,4 +170,17 @@ class GPlayer(CliPlayer, QtCore.QObject):
             msgstr = msg
 
         self.messageReceived.emit(msgstr)
+
+class GPlayer(_GPlayerBase, CliPlayer):
+
+    def __init__(self, name):
+        CliPlayer.__init__(self, name)
+        _GPlayerBase.__init__(self, CliPlayer)
+
+
+class GXMLRPCPlayer(_GPlayerBase, XMLRPCCliPlayer):
+
+    def __init__(self, name):
+        XMLRPCCliPlayer.__init__(self, name)
+        _GPlayerBase.__init__(self, XMLRPCCliPlayer)
 

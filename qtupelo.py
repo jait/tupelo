@@ -6,8 +6,9 @@ import sys
 import time
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-from qcommon import GCard, GPlayer
+from qcommon import GCard, GPlayer, GXMLRPCPlayer
 import common
+import xmlrpc
 import logging
 from game import GameController
 from players import DummyBotPlayer, CountingBotPlayer
@@ -34,7 +35,7 @@ class GTable(QWidget):
         # place where we start drawing
         my_card = None
         for card in cardset:
-            if card.played_by.id == player_id:
+            if card.played_by is not None and card.played_by.id == player_id:
                 my_card = cardset.index(card)
 
         if my_card is not None:
@@ -78,24 +79,31 @@ class TupeloApp(QWidget):
         self.create_game()
         self.draw_hand()
        
-    def create_game(self):
-        game = GameController()
-
-        self.player = GPlayer('Ihiminen')
+    def create_game(self, remote=False):
+        if remote:
+            game = xmlrpc.XMLRPCProxyController('http://localhost:8052')
+            self.player = GXMLRPCPlayer('Humaani')
+        else:
+            game = GameController()
+            self.player = GPlayer('Ihiminen')
 
         self.player.messageReceived.connect(self.append_text)
         self.player.handChanged.connect(self.hand_changed)
         self.player.game_state.stateChanged.connect(self.state_changed)
-        self.player.game_state.trickPlayed.connect(self.trick_played)
+        self.player.trickPlayed.connect(self.trick_played)
         game.register_player(self.player)
 
-        for i in range(1, 4):
-            if i % 2 == 0:
-                game.register_player(CountingBotPlayer('Lopotti %d' % i))
-            else:
-                game.register_player(DummyBotPlayer('Robotti %d' % i))
+        if remote:
+            self.player.start()
+            game.start_game_with_bots()
+        else:
+            for i in range(1, 4):
+                if i % 2 == 0:
+                    game.register_player(CountingBotPlayer('Lopotti %d' % i))
+                else:
+                    game.register_player(DummyBotPlayer('Robotti %d' % i))
 
-        game.start_game()
+            game.start_game()
 
     def card_clicked(self, card):
         #self.append_text("card %s clicked" % unicode(card))
@@ -120,7 +128,7 @@ class TupeloApp(QWidget):
         self.table.draw_cards(state.table, self.player.id)
         self.draw_hand()
 
-    def trick_played(self, state):
+    def trick_played(self, player, state):
         self.append_text("trick played, sleeping")
         self.append_text("table: %s" % str(state.table))
         print "table: %s" % str(state.table)
@@ -134,6 +142,9 @@ class TupeloApp(QWidget):
     def draw_hand(self):
         for widget in self.hand_widget.findChildren(QWidget):
             widget.deleteLater()
+
+        if self.player.hand is None:
+            return
 
         for card in self.player.hand:
             gcard = GCard(card.suit, card.value, parent=self.hand.parentWidget())
