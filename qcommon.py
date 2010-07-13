@@ -12,6 +12,22 @@ from xmlrpc import XMLRPCCliPlayer
 import threading
 
 
+def traced(func):
+    """
+    A decorator for tracing func calls.
+    """
+    def wrapper(*args, **kwargs):
+        print "DEBUG: entering %s()" % func.__name__
+        retval = func(*args, **kwargs)
+        return retval
+
+    wrapper.__name__ = func.__name__
+    wrapper.__dict__ = func.__dict__
+    wrapper.__doc__ = func.__doc__
+
+    return wrapper
+
+
 class SuitLabel(QLabel):
 
     def __init__(self, suit):
@@ -72,6 +88,7 @@ class GGameState(GameState, QtCore.QObject):
         GameState.__init__(self)
         QtCore.QObject.__init__(self)
 
+    @traced
     def update(self, new_state):
         GameState.update(self, new_state)
         self.stateChanged.emit(self)
@@ -164,7 +181,7 @@ class _GPlayerBase(QtCore.QObject):
                 self.handChanged.emit(self.hand)
             finally:
                 self._card_lock.release()
-
+    @traced
     def card_played(self, player, card, game_state):
         """
         Event handler for a played card.
@@ -182,6 +199,7 @@ class _GPlayerBase(QtCore.QObject):
         self.messageReceived.emit(msg)
         self.game_state.update(game_state)
 
+    @traced
     @gsynchronized
     def trick_played(self, player, game_state):
         self.game_state.update(game_state)

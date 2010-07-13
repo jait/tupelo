@@ -6,7 +6,7 @@ import sys
 import time
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-from qcommon import GCard, GPlayer, GXMLRPCPlayer
+from qcommon import GCard, GPlayer, GXMLRPCPlayer, traced
 import common
 import xmlrpc
 import logging
@@ -19,6 +19,7 @@ class GTable(QWidget):
         QWidget.__init__(self, parent)
         self.setLayout(QGridLayout())
 
+    @traced
     def draw_cards(self, cardset, player_id):
         # (row, col)
         left = (1, 0)
