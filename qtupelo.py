@@ -76,7 +76,7 @@ class TupeloApp(QWidget):
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)
         hbox.addWidget(self.text)
-        self.create_game()
+        self.create_game(True)
         self.draw_hand()
        
     def create_game(self, remote=False):
@@ -124,20 +124,18 @@ class TupeloApp(QWidget):
     def state_changed(self, state):
         self.append_text("state_changed(): %s, len(table): %d" % \
                 (str(state), len(state.table)))
+        print("state_changed(): %s, len(table): %d" % \
+                (str(state), len(state.table)))
         self.status_area.setText(str(state))
         self.table.draw_cards(state.table, self.player.id)
         self.draw_hand()
 
     def trick_played(self, player, state):
-        self.append_text("trick played, sleeping")
-        self.append_text("table: %s" % str(state.table))
+        self.append_text("%s takes the trick" % str(player))
         print "table: %s" % str(state.table)
-        # TODO: there must be a better way to implement the delay
-        QTimer.singleShot(0, self.sleep)
-
-    def sleep(self):
-        print "sleeping"
-        time.sleep(2)
+        self.table.draw_cards(state.table, self.player.id)
+        # TODO: is there a better way to implement the delay?
+        QTimer.singleShot(2000, self.player.event_handled)
 
     def draw_hand(self):
         for widget in self.hand_widget.findChildren(QWidget):

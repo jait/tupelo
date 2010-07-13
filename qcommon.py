@@ -11,6 +11,7 @@ from common import GameState, CardSet, UserQuit
 from xmlrpc import XMLRPCCliPlayer
 import threading
 
+
 class SuitLabel(QLabel):
 
     def __init__(self, suit):
@@ -78,6 +79,23 @@ class GGameState(GameState, QtCore.QObject):
             self.trickPlayed.emit(self)
 
 
+def gsynchronized(func):
+    """
+    A decorator to help with GUI synchronization.
+    """
+    def wrapper(self, *args, **kwargs):
+        retval = func(self, *args, **kwargs)
+        self._wait_event.wait()
+        self._wait_event.clear()
+        return retval
+
+    wrapper.__name__ = func.__name__
+    wrapper.__dict__ = func.__dict__
+    wrapper.__doc__ = func.__doc__
+
+    return wrapper
+
+
 class _GPlayerBase(QtCore.QObject):
 
     messageReceived = QtCore.pyqtSignal(str)
@@ -91,6 +109,10 @@ class _GPlayerBase(QtCore.QObject):
         self._card_event = threading.Event()
         self._card_lock = threading.RLock()
         self._quit = False
+        self._wait_event = threading.Event()
+
+    def event_handled(self):
+        self._wait_event.set()
 
     def vote(self):
         self.messageReceived.emit("It's voting time!")
@@ -160,7 +182,9 @@ class _GPlayerBase(QtCore.QObject):
         self.messageReceived.emit(msg)
         self.game_state.update(game_state)
 
+    @gsynchronized
     def trick_played(self, player, game_state):
+        self.game_state.update(game_state)
         self.trickPlayed.emit(player, game_state)
 
     def send_message(self, sender, msg):
