@@ -6,7 +6,7 @@ import xmlrpclib
 import players
 import rpc
 from common import GameState, Card, CardSet, GameError, RuleError
-from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent
+from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent
 import Queue
 import game
 import copy
@@ -125,16 +125,10 @@ class RPCProxyPlayer(players.ThreadedPlayer):
         self.events = Queue.Queue()
 
     def vote(self):
-        """
-        Unused method.
-        """
-        pass
+        self.play_card()
 
     def play_card(self):
-        """
-        Unused method.
-        """
-        pass
+        self.send_event(TurnEvent(copy.deepcopy(self.game_state)))
            
     def card_played(self, player, card, game_state):
         self.send_event(CardPlayedEvent(player, card, copy.deepcopy(game_state)))
@@ -143,8 +137,6 @@ class RPCProxyPlayer(players.ThreadedPlayer):
         self.send_event(TrickPlayedEvent(player, copy.deepcopy(game_state)))
 
     def send_message(self, sender, msg):
-        """
-        """
         self.send_event(MessageEvent(sender, msg))
 
     def send_event(self, event):
@@ -177,6 +169,11 @@ class XMLRPCCliPlayer(players.CliPlayer):
             self.send_message(event.sender, event.message)
         elif isinstance(event, TrickPlayedEvent):
             self.trick_played(event.player, event.game_state)
+        elif isinstance(event, TurnEvent):
+            self.game_state.update(event.game_state)
+            state = self.controller.get_state(self.id)
+            #self.game_state.update(state['game_state'])
+            self.hand = state['hand']
         else:
             print "unknown event: %s" % event
 
@@ -189,10 +186,6 @@ class XMLRPCCliPlayer(players.CliPlayer):
             time.sleep(0.5)
 
             if self.controller is not None:
-                state = self.controller.get_state(self.id)
-                self.game_state.update(state['game_state'])
-                self.hand = state['hand']
-
                 events = self.controller.get_events(self.id)
                 for event in events:
                     self.handle_event(event)

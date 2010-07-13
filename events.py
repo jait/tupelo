@@ -77,6 +77,23 @@ class TrickPlayedEvent(Event):
         return instance
 
 
+class TurnEvent(Event):
+    """
+    It is the player's turn to do something.
+    """
+    type = 4
+    rpc_fields = Event.rpc_fields + ('game_state',)
+
+    def __init__(self, game_state=None):
+       self.game_state = game_state
+
+    @classmethod
+    def rpc_decode(cls, rpcobj):
+        instance = cls.rpc_decode_simple(rpcobj)
+        instance.game_state = rpc.rpc_decode(GameState, rpcobj['game_state'])
+        return instance
+
+
 class EventList(list, rpc.RPCSerializable):
     """
     Class for event lists.
