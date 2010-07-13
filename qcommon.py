@@ -101,9 +101,12 @@ def gsynchronized(func):
     A decorator to help with GUI synchronization.
     """
     def wrapper(self, *args, **kwargs):
+        #print "calling"
         retval = func(self, *args, **kwargs)
+        #print "called, waiting"
         self._wait_event.wait()
         self._wait_event.clear()
+        #print "waited, returning"
         return retval
 
     wrapper.__name__ = func.__name__

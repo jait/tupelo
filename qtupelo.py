@@ -133,9 +133,10 @@ class TupeloApp(QWidget):
 
     def trick_played(self, player, state):
         self.append_text("%s takes the trick" % str(player))
-        print "table: %s" % str(state.table)
+        print "trick_played(): table: %s" % str(state.table)
         self.table.draw_cards(state.table, self.player.id)
         # TODO: is there a better way to implement the delay?
+        # FIXME: this deadlocks in local game
         QTimer.singleShot(2000, self.player.event_handled)
 
     def draw_hand(self):
