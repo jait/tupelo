@@ -36,7 +36,7 @@ class GTable(QWidget):
         # place where we start drawing
         my_card = None
         for card in cardset:
-            if card.played_by is not None and card.played_by.id == player_id:
+            if card.played_by is not None and card.played_by == player_id:
                 my_card = cardset.index(card)
 
         if my_card is not None:
