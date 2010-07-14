@@ -211,7 +211,8 @@ class DummyBotPlayer(ThreadedPlayer):
                 card = choices.get_lowest()
                 if len(state.table) > 0:
                     high = state.table.get_cards(suit=state.table[0].suit).get_highest()
-                    if high.played_by.team == self.team:
+                    high_played_by = self.controller.get_player(high.played_by)
+                    if high_played_by.team == self.team:
                         # we may be getting this trick...
                         if len(state.table) == 3:
                             # and i'm the last to play
@@ -247,7 +248,8 @@ class DummyBotPlayer(ThreadedPlayer):
                 card = choices.get_highest()
                 if len(state.table) > 0:
                     high = state.table.get_cards(suit=state.table[0].suit).get_highest()
-                    if high.played_by.team == self.team:
+                    high_played_by = self.controller.get_player(high.played_by)
+                    if high_played_by.team == self.team:
                         # we may be getting this trick...
                         card = choices.get_lowest()
                     else:
@@ -377,7 +379,12 @@ class CliPlayer(ThreadedPlayer):
 
         print 'Table:'
         for card in state.table:
-            print '%s: %s' % (card.played_by, card)
+            try:
+                plr = self.controller.get_player(card.played_by)
+            except:
+                plr = card.played_by
+
+            print '%s: %s' % (plr, card)
 
         card_played = False
         while not card_played:

@@ -86,7 +86,11 @@ class Card(rpc.RPCSerializable):
 
     @classmethod
     def rpc_decode(cls, rpcobj):
-        return Card(rpc.rpc_decode(Suit, rpcobj['suit']), rpcobj['value'])
+        card = Card(rpc.rpc_decode(Suit, rpcobj['suit']), rpcobj['value'])
+        if rpcobj.has_key('played_by'):
+            card.played_by = rpcobj['played_by']
+
+        return card
 
     def __eq__(self, other):
         return self.suit == other.suit and self.value == other.value

@@ -166,13 +166,14 @@ class GameController(object):
         """
         table = self.state.table
         high = table.get_cards(suit=table[0].suit).get_highest()
-        team = high.played_by.team
+        high_played_by = self.get_player(high.played_by)
+        team = high_played_by.team
         self._send_msg('Team %s takes this trick' % (self._get_team_str(team)))
         self.state.tricks[team] += 1
         self._send_msg('Tricks: %s' % self.state.tricks)
         # send signals
         for plr in self.players:
-            plr.trick_played(high.played_by, self.state)
+            plr.trick_played(high_played_by, self.state)
 
         self.state.table.clear()
 
@@ -180,7 +181,7 @@ class GameController(object):
         if self.state.tricks[0] + self.state.tricks[1] == 13:
             self._hand_played()
         else:
-            self.state.next_in_turn(high.played_by.id)
+            self.state.next_in_turn(high_played_by.id)
             self._signal_act()
 
     def _hand_played(self):
@@ -243,16 +244,16 @@ class GameController(object):
         table = self.state.table
 
         card = copy.copy(card)
-        card.played_by = player
+        card.played_by = player.id
         table.append(card)
         # fire signals
         for plr in self.players:
-            plr.card_played(card.played_by, card, self.state)
+            plr.card_played(player, card, self.state)
 
         if card.suit == common.DIAMOND or card.suit == common.HEART:
             self.state.mode = RAMI
             self.state.rami_chosen_by = player
-            self.state.next_in_turn(card.played_by.id - 1)
+            self.state.next_in_turn(card.played_by - 1)
             self._begin_game()
         elif len(table) == 4:
             self.state.mode = NOLO
@@ -295,7 +296,7 @@ class GameController(object):
             # make sure that the player actually has the card
             try: 
                 table.append(player.hand.take(card))
-                card.played_by = player
+                card.played_by = player.id
             except ValueError:
                 raise RuleError('Invalid card')
 
