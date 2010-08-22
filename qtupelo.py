@@ -22,7 +22,7 @@ class GTable(QWidget):
 
     @traced
     def draw_cards(self, cardset, player_id):
-        # (row, col)
+        # (row, col), 3x3 grid
         left = (1, 0)
         top = (0, 1)
         right = (1, 2)
@@ -176,10 +176,11 @@ def main():
     win = TupeloApp(**opts.__dict__)
     win.show()
 
+    # enter the mainloop of the application.
     ret = app.exec_()
     win.quit_game()
 
-    sys.exit(ret)  # Finally, we enter the mainloop of the application.
+    sys.exit(ret)
 
 if __name__ == '__main__':
     main()
