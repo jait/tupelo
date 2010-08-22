@@ -10,6 +10,7 @@ from qcommon import GCard, GPlayer, GXMLRPCPlayer, traced
 import common
 import xmlrpc
 import logging
+from optparse import OptionParser
 from game import GameController
 from players import DummyBotPlayer, CountingBotPlayer
 
@@ -52,7 +53,7 @@ class GTable(QWidget):
 
 class TupeloApp(QWidget):
 
-    def __init__(self):
+    def __init__(self, remote=False, server=None):
         QWidget.__init__(self)
         self.resize(640, 480)
         self.setWindowTitle("Tupelo")
@@ -77,12 +78,15 @@ class TupeloApp(QWidget):
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)
         hbox.addWidget(self.text)
-        self.create_game(True)
+        self.create_game(remote, server)
         self.draw_hand()
        
-    def create_game(self, remote=False):
+    def create_game(self, remote=False, server=None):
         if remote:
-            game = xmlrpc.XMLRPCProxyController('http://localhost:8052')
+            if server is not None and not server.startswith('http://'):
+                server = 'http://' + server
+
+            game = xmlrpc.XMLRPCProxyController(server)
             self.player = GXMLRPCPlayer('Humaani')
         else:
             game = GameController()
@@ -160,10 +164,19 @@ def main():
     # The application object is located in the QtGui module.
     app = QApplication(sys.argv)
 
+    parser = OptionParser()
+    parser.add_option("-r", "--remote", dest='remote', action="store_true",
+            help="Play using a remote server")
+    parser.add_option("-s", "--server", dest='server', action="store",
+            type="string", metavar='SERVER:PORT',
+            default="localhost:%d" % xmlrpc.DEFAULT_PORT,
+            help="Use given server and port")
+    (opts, args) = parser.parse_args()
+
     format = "%(message)s"
     logging.basicConfig(level=logging.INFO, format=format)
 
-    win = TupeloApp()
+    win = TupeloApp(**opts.__dict__)
     win.show()
 
     ret = app.exec_()
