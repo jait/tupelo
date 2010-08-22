@@ -83,9 +83,6 @@ class TupeloApp(QWidget):
        
     def create_game(self, remote=False, server=None):
         if remote:
-            if server is not None and not server.startswith('http://'):
-                server = 'http://' + server
-
             game = xmlrpc.XMLRPCProxyController(server)
             self.player = GXMLRPCPlayer('Humaani')
         else:
