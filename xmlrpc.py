@@ -200,6 +200,10 @@ class XMLRPCProxyController(object):
     """
     def __init__(self, server_uri):
         super(XMLRPCProxyController, self).__init__()
+        if not server_uri.startswith('http://') and \
+            not server_uri.startswith('https://'):
+            server_uri = 'http://' + server_uri
+
         self.server = xmlrpclib.ServerProxy(server_uri)
 
     @fault2error

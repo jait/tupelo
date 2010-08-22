@@ -11,9 +11,6 @@ def _run_remote(server_addr):
     """
     Run, Forrest! Run!
     """
-    if not server_addr.startswith('http://'):
-        server_addr = 'http://' + server_addr
-
     game = xmlrpc.XMLRPCProxyController(server_addr)
     player = xmlrpc.XMLRPCCliPlayer('Humaani')
     game.register_player(player)
