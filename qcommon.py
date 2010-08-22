@@ -58,7 +58,7 @@ class GCard(QWidget, Card):
     def __init__(self, suit, value, parent=None):
         QWidget.__init__(self, parent)
         Card.__init__(self, suit, value)
-        label = QLabel(self.get_char())
+        label = QLabel(self.char)
         label.setScaledContents(True)
         layout = QHBoxLayout(self)
         icon = SuitLabel(self.suit)
