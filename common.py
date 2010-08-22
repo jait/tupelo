@@ -115,15 +115,23 @@ class Card(rpc.RPCSerializable):
         """
         Get the 'unofficial' string representation.
         """
-        return '%s%s' % (self.get_char(), self.suit.char)
+        return '%s%s' % (self.char, self.suit.char)
 
-    def get_char(self):
+    @property
+    def char(self):
         """
         Get the character corresponding to the card value.
         """
         if self._chars.has_key(self.value):
             return self._chars[self.value]
         return str(self.value)
+
+    def get_char(self):
+        """
+        For compatibility.
+        """
+        return self.char
+
 
 class CardSet(list, rpc.RPCSerializable):
     """
