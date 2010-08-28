@@ -45,8 +45,13 @@ class GTable(QWidget):
         else:
             index = (my_place - len(cardset)) % 4
 
-        for card in cardset:
-            gcard = GCard(card.suit, card.value, parent=self)
+        for i in range(0,4):
+            try:
+                card = cardset[i]
+                gcard = GCard(card.suit, card.value, parent=self)
+            except IndexError:
+                gcard = QWidget(parent=self)
+
             place = places[index]
             self.layout().addWidget(gcard, place[0], place[1])
             index = (index + 1) % 4
