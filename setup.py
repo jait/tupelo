@@ -15,7 +15,7 @@ setup (name = "tupelo",
     author = "Jari Tenhunen",
     author_email = "jari.tenhunen@iki.fi",
     license = "BSD",
-    py_modules = ['common', 'game', 'players', 'rpc', 'xmlrpc'],
+    py_modules = ['common', 'game', 'players', 'rpc', 'xmlrpc', 'events'],
     scripts = ['tupelo.py', 'tupelo-server.py'],
     platforms="Python 2.4 and later."
     )
