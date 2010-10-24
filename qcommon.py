@@ -2,8 +2,15 @@
 # vim: set sts=4 sw=4 et:
 # -*- coding: utf-8 -*-
 #
-from PyQt4.QtGui import *
-from PyQt4 import QtCore
+try:
+    from PyQt4.QtGui import *
+    from PyQt4 import QtCore
+    QtCore.Signal = QtCore.pyqtSignal
+    QtCore.Slot = QtCore.pyqtSlot
+except ImportError:
+    from PySide.QtGui import *
+    from PySide import QtCore
+
 from common import Card, Suit
 from players import Player, CliPlayer
 from common import STOPPED, VOTING, ONGOING
@@ -53,7 +60,7 @@ class SuitLabel(QLabel):
 
 class GCard(QWidget, Card):
 
-    clicked = QtCore.pyqtSignal(Card)
+    clicked = QtCore.Signal(Card)
 
     def __init__(self, suit, value, parent=None):
         QWidget.__init__(self, parent)
@@ -81,12 +88,12 @@ class GCard(QWidget, Card):
 
 class GGameState(GameState, QtCore.QObject):
 
-    stateChanged = QtCore.pyqtSignal(GameState)
-    trickPlayed = QtCore.pyqtSignal(GameState)
+    stateChanged = QtCore.Signal(GameState)
+    trickPlayed = QtCore.Signal(GameState)
 
     def __init__(self):
         GameState.__init__(self)
-        QtCore.QObject.__init__(self)
+        #QtCore.QObject.__init__(self)
 
     @traced
     def update(self, new_state):
@@ -118,9 +125,9 @@ def gsynchronized(func):
 
 class _GPlayerBase(QtCore.QObject):
 
-    messageReceived = QtCore.pyqtSignal(str)
-    handChanged = QtCore.pyqtSignal(CardSet)
-    trickPlayed = QtCore.pyqtSignal(Player, GameState)
+    messageReceived = QtCore.Signal(str)
+    handChanged = QtCore.Signal(CardSet)
+    trickPlayed = QtCore.Signal(Player, GameState)
 
     def __init__(self, base):
         QtCore.QObject.__init__(self)

@@ -4,8 +4,20 @@
 #
 import sys
 import time
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+try:
+    from PyQt4.QtGui import *
+except ImportError:
+    from PySide.QtGui import *
+    import PySide.QtGui
+try:
+    from PyQt4.QtCore import *
+    from PyQt4 import QtCore
+    QtCore.Signal = QtCore.pyqtSignal
+    QtCore.Slot = QtCore.pyqtSlot
+except ImportError:
+    from PySide.QtCore import *
+    import PySide.QtCore
+
 from qcommon import GCard, GPlayer, GXMLRPCPlayer, traced
 import common
 import xmlrpc
@@ -31,7 +43,8 @@ class GTable(QWidget):
         places = [left, top, right, bottom]
         my_place = places.index(bottom)
 
-        for widget in self.findChildren(QWidget):
+        # findChildren() is incompatible in PySide and PyQt4
+        for widget in self.findChildren(QWidget, ''):
             widget.deleteLater()
 
         # place where we start drawing
@@ -146,7 +159,8 @@ class TupeloApp(QWidget):
         QTimer.singleShot(2000, self.player.event_handled)
 
     def draw_hand(self):
-        for widget in self.hand_widget.findChildren(QWidget):
+        # findChildren() is incompatible in PySide and PyQt4
+        for widget in self.hand_widget.findChildren(QWidget, ''):
             widget.deleteLater()
 
         if self.player.hand is None:
