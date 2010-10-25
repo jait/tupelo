@@ -16,7 +16,8 @@ setup (name = "tupelo",
     author_email = "jari.tenhunen@iki.fi",
     license = "BSD",
     packages = ['tupelo'],
-    scripts = ['tupelo.py', 'tupelo-server.py'],
+    py_modules = ['qcommon'],
+    scripts = ['qtupelo.py', 'tupelo.py', 'tupelo-server.py'],
     platforms="Python 2.4 and later.",
     test_suite = "nose.collector"
     )
