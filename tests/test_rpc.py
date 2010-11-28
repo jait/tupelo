@@ -29,6 +29,27 @@ class TestRPC(unittest.TestCase):
        self.assert_(isinstance(decoded, _RPCTestClass))
        self.assertEqual(decoded.a, 2)
 
+   def testSerializableEqual(self):
+       testobj1 = _RPCTestClass()
+       testobj2 = _RPCTestClass()
+       self.assertEqual(testobj1, testobj2)
+       self.assertFalse(testobj1 != testobj2)
+       decoded1 = rpc.rpc_decode(_RPCTestClass, rpc.rpc_encode(testobj1))
+       decoded2 = rpc.rpc_decode(_RPCTestClass, rpc.rpc_encode(testobj2))
+       self.assertEqual(decoded1, decoded2)
+       self.assertFalse(decoded1 != decoded2)
+
+   def testSerializableNotEqual(self):
+       testobj1 = _RPCTestClass()
+       testobj2 = _RPCTestClass()
+       testobj2.a = 0
+       self.assertNotEqual(testobj1, testobj2)
+       self.assertFalse(testobj1 == testobj2)
+       decoded1 = rpc.rpc_decode(_RPCTestClass, rpc.rpc_encode(testobj1))
+       decoded2 = rpc.rpc_decode(_RPCTestClass, rpc.rpc_encode(testobj2))
+       self.assertNotEqual(decoded1, decoded2)
+       self.assertFalse(decoded1 == decoded2)
+
    def testSerializeCustom(self):
        testobj = _CustomClass()
        encoded = rpc.rpc_encode(testobj)

@@ -24,6 +24,19 @@ class RPCSerializable(object):
     Base class for objects that are serializable into
     an RPC-safe form.
     """
+    def __eq__(self, other):
+        if not hasattr(self, 'rpc_fields'):
+            return object.__eq__(self, other)
+
+        for field in self.rpc_fields:
+            if getattr(self, field) != getattr(other, field):
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def rpc_encode(self):
         """
         Encode an instance of RPCSerializable into an rpc object.
