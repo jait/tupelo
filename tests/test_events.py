@@ -47,11 +47,12 @@ class TestEventsRPC(unittest.TestCase):
         el = events.EventList()
         el.append(events.MessageEvent('a', 'b'))
         el.append(events.MessageEvent('c', 'd'))
-        self.assertEqual(len(el), 2)
+        num = len(el)
+        self.assertEqual(num, 2)
         el2 = rpc.rpc_decode(events.EventList, rpc.rpc_encode(el))
         self.assert_(isinstance(el2, events.EventList))
-        self.assertEqual(len(el2), 2)
-        for i in range(0, len(el)):
+        self.assertEqual(len(el2), num)
+        for i in range(0, num):
             self.assertEqual(el[i], el2[i])
 
 
