@@ -39,6 +39,13 @@ class TestRPC(unittest.TestCase):
        self.assertEqual(decoded1, decoded2)
        self.assertFalse(decoded1 != decoded2)
 
+   def testSerializableEqualWrongType(self):
+       testobj1 = _RPCTestClass()
+       self.assertNotEqual(testobj1, [])
+       self.assertTrue(testobj1 != [])
+       self.assertNotEqual(testobj1, 'wrong type')
+       self.assertNotEqual(testobj1, None)
+
    def testSerializableNotEqual(self):
        testobj1 = _RPCTestClass()
        testobj2 = _RPCTestClass()

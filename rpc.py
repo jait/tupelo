@@ -29,7 +29,10 @@ class RPCSerializable(object):
             return object.__eq__(self, other)
 
         for field in self.rpc_fields:
-            if getattr(self, field) != getattr(other, field):
+            try:
+                if getattr(self, field) != getattr(other, field):
+                    return False
+            except AttributeError:
                 return False
 
         return True
