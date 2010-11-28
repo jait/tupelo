@@ -52,7 +52,8 @@ class RPCSerializable(object):
         if hasattr(cls, 'rpc_fields'):
             instance = cls()
             for attr in cls.rpc_fields:
-                setattr(instance, attr, rpcobj[attr])
+                if rpcobj.has_key(attr):
+                    setattr(instance, attr, rpcobj[attr])
 
             return instance
         else:

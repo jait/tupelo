@@ -28,7 +28,7 @@ class TestRPC(unittest.TestCase):
        decoded = rpc.rpc_decode(_RPCTestClass, encoded)
        self.assert_(isinstance(decoded, _RPCTestClass))
        self.assertEqual(decoded.a, 2)
-        
+
    def testSerializeCustom(self):
        testobj = _CustomClass()
        encoded = rpc.rpc_encode(testobj)

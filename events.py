@@ -40,9 +40,15 @@ class CardPlayedEvent(Event):
     @classmethod
     def rpc_decode(cls, rpcobj):
         instance = cls.rpc_decode_simple(rpcobj)
-        instance.player = rpc.rpc_decode(Player, rpcobj['player'])
-        instance.card = rpc.rpc_decode(Card, rpcobj['card'])
-        instance.game_state = rpc.rpc_decode(GameState, rpcobj['game_state'])
+        if rpcobj.has_key('player'):
+            instance.player = rpc.rpc_decode(Player, rpcobj['player'])
+
+        if rpcobj.has_key('card'):
+            instance.card = rpc.rpc_decode(Card, rpcobj['card'])
+
+        if rpcobj.has_key('game_state'):
+            instance.game_state = rpc.rpc_decode(GameState, rpcobj['game_state'])
+
         return instance
 
 
