@@ -17,7 +17,8 @@ setup (name = "tupelo",
     license = "BSD",
     py_modules = ['common', 'game', 'players', 'rpc', 'xmlrpc', 'events'],
     scripts = ['tupelo.py', 'tupelo-server.py'],
-    platforms="Python 2.4 and later."
+    platforms="Python 2.4 and later.",
+    test_suite = "nose.collector"
     )
 
 
