@@ -6,6 +6,8 @@ from optparse import OptionParser
 import xmlrpc
 import logging
 
+LISTEN_ADDR = '' # or 'localhost'
+
 def _runserver():
     """
     Run, Forrest! Run!
@@ -17,7 +19,7 @@ def _runserver():
     (opts, args) = parser.parse_args()
     logformat = "server: %(message)s"
     logging.basicConfig(level=logging.INFO, format=logformat)
-    server = SimpleXMLRPCServer(('localhost', opts.port))
+    server = SimpleXMLRPCServer((LISTEN_ADDR, opts.port))
     rpciface = xmlrpc.TupeloXMLRPCInterface()
     server.register_instance(rpciface)
     logging.info('Tupelo server serving at port %d' % opts.port)
