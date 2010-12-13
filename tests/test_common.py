@@ -76,6 +76,15 @@ class TestCommon(unittest.TestCase):
         lo = cs.get_lowest(roof=2)
         self.assert_(lo is None)
 
+    def testGameStateRPC(self):
+        gs = common.GameState()
+        gs.table.append(Card(common.HEART, 5))
+        encoded = rpc.rpc_encode(gs)
+        gs2 = rpc.rpc_decode(common.GameState, encoded)
+        self.assert_(isinstance(gs2, common.GameState))
+        self.assert_(isinstance(gs2.table, gs.table.__class__))
+        self.assertEqual(len(gs2.table), len(gs.table))
+
 
 if __name__ == '__main__':
     unittest.main()
