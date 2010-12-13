@@ -4,6 +4,8 @@
 import unittest
 import events
 import rpc
+import common
+import players
 
 class TestEventsRPC(unittest.TestCase):
 
@@ -20,6 +22,18 @@ class TestEventsRPC(unittest.TestCase):
         e2 = rpc.rpc_decode(events.Event, rpc.rpc_encode(e))
         self.assert_(isinstance(e2, cls))
         self.assertEqual(e.type, e2.type)
+
+    def testCardPlayed(self):
+        cls = events.CardPlayedEvent
+        plr = players.Player('Seppo')
+        card = common.Card(common.HEART, 5)
+        e = cls(plr, card)
+        e2 = rpc.rpc_decode(events.Event, rpc.rpc_encode(e))
+        self.assert_(isinstance(e2, cls))
+        self.assertEqual(e.type, e2.type)
+        self.assertEqual(e.player.player_name, e2.player.player_name)
+        self.assertEqual(e.card, e2.card)
+        self.assertEqual(e2.game_state, None)
 
     def testMessageEmpty(self):
         cls = events.MessageEvent
