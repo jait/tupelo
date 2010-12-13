@@ -22,6 +22,14 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(heart.value, decoded.value)
         self.assertEqual(heart.name, decoded.name)
 
+    def testCardRPC(self):
+        card = Card(common.HEART, 5)
+        encoded = rpc.rpc_encode(card)
+        self.assertFalse(isinstance(encoded, common.Card))
+        decoded = rpc.rpc_decode(common.Card, encoded)
+        self.assert_(isinstance(decoded, common.Card))
+        self.assertEqual(card, decoded)
+
     def testCardSet(self):
         deck = CardSet.new_full_deck()
         self.assert_(len(deck) == 52)
