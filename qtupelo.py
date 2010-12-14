@@ -18,13 +18,13 @@ except ImportError:
     from PySide.QtCore import *
     import PySide.QtCore
 
-from qcommon import GCard, GPlayer, GXMLRPCPlayer, traced
-import common
-import xmlrpc
+from tupelo.qcommon import GCard, GPlayer, GXMLRPCPlayer, traced
+from tupelo import common
+from tupelo import xmlrpc
 import logging
 from optparse import OptionParser
-from game import GameController
-from players import DummyBotPlayer, CountingBotPlayer
+from tupelo.game import GameController
+from tupelo.players import DummyBotPlayer, CountingBotPlayer
 
 class GTable(QWidget):
 
