@@ -143,11 +143,11 @@ class RPCSerializable(object):
             return None
 
         # try first if some class has a overridden type
-        for sub in _itersubclasses(cls):
+        for sub in _itersubclasses(RPCSerializable):
             if hasattr(sub, 'rpc_type') and sub.rpc_type == type:
                 return sub
         # then try with class name
-        for sub in _itersubclasses(cls):
+        for sub in _itersubclasses(RPCSerializable):
             if sub.__name__ == type:
                 return sub
 

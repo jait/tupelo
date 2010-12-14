@@ -271,7 +271,7 @@ class GameState(rpc.RPCSerializable):
     """
     State of a single game.
     """
-    rpc_attrs = ('state', 'mode', 'table', 'score', 'tricks', 'turn')
+    rpc_attrs = ('state', 'mode', 'table:CardSet', 'score', 'tricks', 'turn')
 
     def __init__(self):
         super(GameState, self).__init__()
@@ -291,14 +291,6 @@ class GameState(rpc.RPCSerializable):
         for attr in self.__dict__:
             if hasattr(new_state, attr):
                 setattr(self, attr, getattr(new_state, attr))
-
-    @classmethod
-    def rpc_decode(cls, rpcobj):
-        instance = cls.rpc_decode_simple(rpcobj)
-        # special handling for table, 
-        # we could automate this if rpc_attrs carried the class info
-        instance.table = rpc.rpc_decode(CardSet, rpcobj['table'])
-        return instance
 
     def next_in_turn(self, next=None):
         """

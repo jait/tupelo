@@ -30,27 +30,12 @@ class CardPlayedEvent(Event):
     A card has been played.
     """
     type = 1
-    rpc_attrs = Event.rpc_attrs + ('player', 'card', 'game_state')
+    rpc_attrs = Event.rpc_attrs + ('player:Player', 'card:Card', 'game_state:GameState')
 
     def __init__(self, player=None, card=None, game_state=None):
        self.player = player
        self.card = card
        self.game_state = game_state
-
-    @classmethod
-    def rpc_decode(cls, rpcobj):
-        instance = cls.rpc_decode_simple(rpcobj)
-        if rpcobj.has_key('player'):
-            instance.player = rpc.rpc_decode(Player, rpcobj['player'])
-
-        if rpcobj.has_key('card'):
-            instance.card = rpc.rpc_decode(Card, rpcobj['card'])
-
-        if rpcobj.has_key('game_state'):
-            instance.game_state = rpc.rpc_decode(GameState, rpcobj['game_state'])
-
-        return instance
-
 
 class MessageEvent(Event):
     """
@@ -69,18 +54,11 @@ class TrickPlayedEvent(Event):
     A card has been played.
     """
     type = 3
-    rpc_attrs = Event.rpc_attrs + ('player', 'game_state')
+    rpc_attrs = Event.rpc_attrs + ('player:Player', 'game_state:GameState')
 
     def __init__(self, player=None, game_state=None):
        self.player = player
        self.game_state = game_state
-
-    @classmethod
-    def rpc_decode(cls, rpcobj):
-        instance = cls.rpc_decode_simple(rpcobj)
-        instance.player = rpc.rpc_decode(Player, rpcobj['player'])
-        instance.game_state = rpc.rpc_decode(GameState, rpcobj['game_state'])
-        return instance
 
 
 class TurnEvent(Event):
@@ -88,16 +66,10 @@ class TurnEvent(Event):
     It is the player's turn to do something.
     """
     type = 4
-    rpc_attrs = Event.rpc_attrs + ('game_state',)
+    rpc_attrs = Event.rpc_attrs + ('game_state:GameState',)
 
     def __init__(self, game_state=None):
        self.game_state = game_state
-
-    @classmethod
-    def rpc_decode(cls, rpcobj):
-        instance = cls.rpc_decode_simple(rpcobj)
-        instance.game_state = rpc.rpc_decode(GameState, rpcobj['game_state'])
-        return instance
 
 
 class EventList(list, rpc.RPCSerializable):
