@@ -10,7 +10,7 @@ class Event(rpc.RPCSerializable):
     Class for events.
     """
     type = 0
-    rpc_fields = ('type',)
+    rpc_attrs = ('type',)
 
     @classmethod
     def rpc_decode(cls, rpcobj):
@@ -30,7 +30,7 @@ class CardPlayedEvent(Event):
     A card has been played.
     """
     type = 1
-    rpc_fields = Event.rpc_fields + ('player', 'card', 'game_state')
+    rpc_attrs = Event.rpc_attrs + ('player', 'card', 'game_state')
 
     def __init__(self, player=None, card=None, game_state=None):
        self.player = player
@@ -57,7 +57,7 @@ class MessageEvent(Event):
     A message.
     """
     type = 2
-    rpc_fields = Event.rpc_fields + ('sender', 'message')
+    rpc_attrs = Event.rpc_attrs + ('sender', 'message')
 
     def __init__(self, sender=None, message=None):
         self.sender = sender
@@ -69,7 +69,7 @@ class TrickPlayedEvent(Event):
     A card has been played.
     """
     type = 3
-    rpc_fields = Event.rpc_fields + ('player', 'game_state')
+    rpc_attrs = Event.rpc_attrs + ('player', 'game_state')
 
     def __init__(self, player=None, game_state=None):
        self.player = player
@@ -88,7 +88,7 @@ class TurnEvent(Event):
     It is the player's turn to do something.
     """
     type = 4
-    rpc_fields = Event.rpc_fields + ('game_state',)
+    rpc_attrs = Event.rpc_attrs + ('game_state',)
 
     def __init__(self, game_state=None):
        self.game_state = game_state

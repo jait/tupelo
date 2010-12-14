@@ -75,7 +75,7 @@ class Card(rpc.RPCSerializable):
     Class that represents a single card.
     """
     _chars = {11:'J', 12:'Q', 13:'K', 14:'A'}
-    rpc_fields = ('suit', 'value', 'played_by')
+    rpc_attrs = ('suit', 'value', 'played_by')
 
     def __init__(self, suit, value):
         super(Card, self).__init__()
@@ -271,7 +271,7 @@ class GameState(rpc.RPCSerializable):
     """
     State of a single game.
     """
-    rpc_fields = ('state', 'mode', 'table', 'score', 'tricks', 'turn')
+    rpc_attrs = ('state', 'mode', 'table', 'score', 'tricks', 'turn')
 
     def __init__(self):
         super(GameState, self).__init__()
@@ -296,7 +296,7 @@ class GameState(rpc.RPCSerializable):
     def rpc_decode(cls, rpcobj):
         instance = cls.rpc_decode_simple(rpcobj)
         # special handling for table, 
-        # we could automate this if rpc_fields carried the class info
+        # we could automate this if rpc_attrs carried the class info
         instance.table = rpc.rpc_decode(CardSet, rpcobj['table'])
         return instance
 

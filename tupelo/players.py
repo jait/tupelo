@@ -12,7 +12,7 @@ class Player(rpc.RPCSerializable):
     """
     Base class for players.
     """
-    rpc_fields = ('id', 'player_name', 'team')
+    rpc_attrs = ('id', 'player_name', 'team')
 
     def __init__(self, name):
         self.id = -1
@@ -31,7 +31,7 @@ class Player(rpc.RPCSerializable):
         Make Player classes safe for pickling and deepcopying.
         """
         state = {}
-        for key in self.rpc_fields:
+        for key, _ in self.iter_rpc_attrs():
             state[key] = getattr(self, key)
 
         return state
