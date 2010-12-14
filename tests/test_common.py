@@ -2,9 +2,9 @@
 # vim: set sts=4 sw=4 et:
 
 import unittest
-import rpc
-import common
-from common import Card, CardSet
+from tupelo import rpc
+from tupelo import common
+from tupelo.common import Card, CardSet
 import copy
 
 class TestCommon(unittest.TestCase):

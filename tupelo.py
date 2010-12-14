@@ -2,10 +2,11 @@
 # vim: set sts=4 sw=4 et:
 
 import logging
-import xmlrpc
+import tupelo
+from tupelo import xmlrpc
 from optparse import OptionParser
-from players import CliPlayer, CountingBotPlayer, DummyBotPlayer
-from game import GameController
+from tupelo.players import CliPlayer, CountingBotPlayer, DummyBotPlayer
+from tupelo.game import GameController
 
 def _run_remote(server_addr):
     """

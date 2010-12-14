@@ -2,10 +2,10 @@
 # vim: set sts=4 sw=4 et:
 
 import unittest
-import events
-import rpc
-import common
-import players
+from tupelo import events
+from tupelo import rpc
+from tupelo import common
+from tupelo import players
 
 class TestEventsRPC(unittest.TestCase):
 

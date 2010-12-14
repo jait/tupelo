@@ -3,7 +3,7 @@
 
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from optparse import OptionParser
-import xmlrpc
+from tupelo import xmlrpc
 import logging
 
 LISTEN_ADDR = '' # or 'localhost'

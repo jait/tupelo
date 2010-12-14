@@ -2,7 +2,7 @@
 # vim: set sts=4 sw=4 et:
 
 import unittest
-import rpc
+from tupelo import rpc
 
 class _RPCTestClass(rpc.RPCSerializable):
     rpc_fields = ('a', 'b')
