@@ -172,8 +172,8 @@ class XMLRPCCliPlayer(players.CliPlayer):
         elif isinstance(event, TurnEvent):
             self.game_state.update(event.game_state)
             state = self.controller.get_state(self.id)
-            #self.game_state.update(state['game_state'])
             self.hand = state['hand']
+            self.game_state.update(state['game_state'])
         else:
             print "unknown event: %s" % event
 
