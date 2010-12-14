@@ -5,7 +5,7 @@ import unittest
 from tupelo import rpc
 
 class _RPCTestClass(rpc.RPCSerializable):
-    rpc_fields = ('a', 'b')
+    rpc_attrs = ('a', 'b')
     a = 1
     b = '2'
 
