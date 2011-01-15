@@ -16,6 +16,23 @@ ONGOING = 2
 
 TURN_NONE = -1
 
+
+def traced(func):
+    """
+    A decorator for tracing func calls.
+    """
+    def wrapper(*args, **kwargs):
+        print "DEBUG: entering %s()" % func.__name__
+        retval = func(*args, **kwargs)
+        return retval
+
+    wrapper.__name__ = func.__name__
+    wrapper.__dict__ = func.__dict__
+    wrapper.__doc__ = func.__doc__
+
+    return wrapper
+
+
 class GameError(Exception):
     """
     Generic error class for game errors.
