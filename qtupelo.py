@@ -18,7 +18,8 @@ except ImportError:
     from PySide.QtCore import *
     import PySide.QtCore
 
-from tupelo.qcommon import GCard, GPlayer, GXMLRPCPlayer, traced
+from tupelo.qcommon import GCard, GPlayer, GXMLRPCPlayer
+from tupelo.common import traced
 from tupelo import common
 from tupelo import xmlrpc
 import logging

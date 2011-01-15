@@ -14,25 +14,9 @@ except ImportError:
 from common import Card, Suit
 from players import Player, CliPlayer
 from common import STOPPED, VOTING, ONGOING
-from common import GameState, CardSet, UserQuit
+from common import GameState, CardSet, UserQuit, traced
 from xmlrpc import XMLRPCCliPlayer
 import threading
-
-
-def traced(func):
-    """
-    A decorator for tracing func calls.
-    """
-    def wrapper(*args, **kwargs):
-        print "DEBUG: entering %s()" % func.__name__
-        retval = func(*args, **kwargs)
-        return retval
-
-    wrapper.__name__ = func.__name__
-    wrapper.__dict__ = func.__dict__
-    wrapper.__doc__ = func.__doc__
-
-    return wrapper
 
 
 class SuitLabel(QLabel):
