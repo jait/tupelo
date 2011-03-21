@@ -291,7 +291,7 @@ class GameState(rpc.RPCSerializable):
     rpc_attrs = ('state', 'mode', 'table:CardSet', 'score', 'tricks', 'turn')
 
     def __init__(self):
-        super(GameState, self).__init__()
+        rpc.RPCSerializable.__init__(self)
         self.state = STOPPED
         self.mode = NOLO
         self.table = CardSet()
