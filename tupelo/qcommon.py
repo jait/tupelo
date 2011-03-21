@@ -114,6 +114,7 @@ class _GPlayerBase(QtCore.QObject):
     trickPlayed = QtCore.Signal(Player, GameState)
 
     def __init__(self, base):
+        assert type(self) != _GPlayerBase, "This class must not be instantiated directly"
         QtCore.QObject.__init__(self)
         self.base = base
         self.game_state = GGameState()
