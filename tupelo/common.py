@@ -95,7 +95,7 @@ class Card(rpc.RPCSerializable):
     rpc_attrs = ('suit', 'value', 'played_by')
 
     def __init__(self, suit, value):
-        rpc.RPCSerializable.__init__()
+        rpc.RPCSerializable.__init__(self)
         self.suit = suit
         self.value = value
         self.potential_owners = range(0, 4)
