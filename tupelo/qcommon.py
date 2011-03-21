@@ -76,8 +76,8 @@ class GGameState(GameState, QtCore.QObject):
     trickPlayed = QtCore.Signal(GameState)
 
     def __init__(self):
+        QtCore.QObject.__init__(self)
         GameState.__init__(self)
-        #QtCore.QObject.__init__(self)
 
     @traced
     def update(self, new_state):
