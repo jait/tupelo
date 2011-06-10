@@ -309,14 +309,14 @@ class GameState(rpc.RPCSerializable):
             if hasattr(new_state, attr):
                 setattr(self, attr, getattr(new_state, attr))
 
-    def next_in_turn(self, next=None):
+    def next_in_turn(self, thenext=None):
         """
         Set the next player in turn.
         """
-        if next is None:
+        if thenext is None:
             self.turn = (self.turn + 1) % 4
         else:
-            self.turn = (next) % 4
+            self.turn = (thenext) % 4
 
     def __str__(self):
         statestr = {STOPPED: 'STOPPED', VOTING: 'VOTING', ONGOING: 'ONGOING'}

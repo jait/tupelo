@@ -2,8 +2,7 @@
 # vim: set sts=4 sw=4 et:
 
 import rpc
-from players import Player
-from common import Card, GameState
+
 
 class Event(rpc.RPCSerializable):
     """
@@ -33,9 +32,9 @@ class CardPlayedEvent(Event):
     rpc_attrs = Event.rpc_attrs + ('player:Player', 'card:Card', 'game_state:GameState')
 
     def __init__(self, player=None, card=None, game_state=None):
-       self.player = player
-       self.card = card
-       self.game_state = game_state
+        self.player = player
+        self.card = card
+        self.game_state = game_state
 
 class MessageEvent(Event):
     """
@@ -57,8 +56,8 @@ class TrickPlayedEvent(Event):
     rpc_attrs = Event.rpc_attrs + ('player:Player', 'game_state:GameState')
 
     def __init__(self, player=None, game_state=None):
-       self.player = player
-       self.game_state = game_state
+        self.player = player
+        self.game_state = game_state
 
 
 class TurnEvent(Event):
@@ -69,7 +68,7 @@ class TurnEvent(Event):
     rpc_attrs = Event.rpc_attrs + ('game_state:GameState',)
 
     def __init__(self, game_state=None):
-       self.game_state = game_state
+        self.game_state = game_state
 
 
 class EventList(list, rpc.RPCSerializable):
