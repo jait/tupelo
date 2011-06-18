@@ -138,7 +138,6 @@ class Card(rpc.RPCSerializable):
         """
         Get the 'unofficial' string representation.
         """
-        #return '%s%s' % (self.char, self.suit.char)
         return self.__unicode__().encode('utf-8')
 
     def __unicode__(self):
