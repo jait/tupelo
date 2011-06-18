@@ -73,6 +73,12 @@ class Suit(object):
     def rpc_decode(cls, value):
         return _get_suit(value)
 
+    def __str__(self):
+        """
+        Get the 'unofficial' string representation.
+        """
+        return self.name
+
 HEART = Suit(3, 'hearts', u'\u2665')
 CLUB = Suit(2, 'clubs', u'\u2663')
 DIAMOND = Suit(1, 'diamonds', u'\u2666')
@@ -132,7 +138,14 @@ class Card(rpc.RPCSerializable):
         """
         Get the 'unofficial' string representation.
         """
-        return '%s%s' % (self.char, self.suit.char)
+        #return '%s%s' % (self.char, self.suit.char)
+        return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
+        """
+        Get the 'unofficial' unicode representation.
+        """
+        return u'%s%s' % (self.char, self.suit.char)
 
     @property
     def char(self):
