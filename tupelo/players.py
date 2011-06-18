@@ -121,7 +121,7 @@ class ThreadedPlayer(threading.Thread, Player):
                     break
                 except Exception, error:
                     print 'Error:', error
-                    raise error
+                    raise
             else:
                 try:
                     self.play_card()
@@ -131,7 +131,7 @@ class ThreadedPlayer(threading.Thread, Player):
                     break
                 except Exception, error:
                     print 'Error:', error
-                    raise error
+                    raise
         
         print '%s exiting' % self
 
@@ -189,7 +189,7 @@ class DummyBotPlayer(ThreadedPlayer):
             self.controller.play_card(self, best)
         except RuleError, error:
             print 'Oops', error
-            raise error
+            raise
 
     def play_card(self):
         state = self.game_state
@@ -275,7 +275,7 @@ class DummyBotPlayer(ThreadedPlayer):
             self.controller.play_card(self, card)
         except RuleError, error:
             print 'Oops', error
-            raise error
+            raise
 
 
 class CountingBotPlayer(DummyBotPlayer):
@@ -308,7 +308,8 @@ class CountingBotPlayer(DummyBotPlayer):
             try:
                 self.cards_left.remove(card)
             except ValueError:
-                print "Oops: removing card %s failed" % str(card)
+                print "Oops: removing card %s failed" % card
+                # TODO: we sometimes get this with CountingBotPlayer
 
 
 class CliPlayer(ThreadedPlayer):
