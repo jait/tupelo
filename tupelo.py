@@ -12,11 +12,14 @@ def _run_remote(server_addr):
     """
     Run, Forrest! Run!
     """
-    game = xmlrpc.XMLRPCProxyController(server_addr)
+    server = xmlrpc.XMLRPCProxyController(server_addr)
     player = xmlrpc.XMLRPCCliPlayer('Humaani')
-    game.register_player(player)
+    server.register_player(player)
+    games = server.list_games()
+    game_id = games[0]
+    #server.game_enter(game_id, player.id)
     player.start()
-    game.start_game_with_bots()
+    server.game_start_game_with_bots(game_id)
     
 def _run_local():
     """

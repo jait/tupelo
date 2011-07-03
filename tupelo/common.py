@@ -47,6 +47,13 @@ class RuleError(Exception):
     rpc_code = 2
 
 
+class ProtocolError(Exception):
+    """
+    Error for problems in using the RPC protocol.
+    """
+    rpc_code = 3
+
+
 class UserQuit(GameError):
     """
     Exception for indicating that user quits the game.

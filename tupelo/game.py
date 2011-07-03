@@ -22,6 +22,7 @@ class GameController(object):
         self.players = []
         self.state = GameState()
         self.shutdown_event = threading.Event()
+        self.id = None
 
     def register_player(self, player):
         """
@@ -31,7 +32,8 @@ class GameController(object):
             raise GameError('Already 4 players registered')
 
         self.players.append(player)
-        player.id = self.players.index(player)
+        if player.id == -1:
+            player.id = self.players.index(player)
         player.team = player.id % 2
 
     def player_leave(self, player_id):

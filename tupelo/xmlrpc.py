@@ -5,7 +5,7 @@ import time
 import xmlrpclib
 import players
 import rpc
-from common import GameState, Card, CardSet, GameError, RuleError
+from common import GameState, Card, CardSet, GameError, RuleError, ProtocolError
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent
 import Queue
 import game
@@ -25,6 +25,8 @@ def error2fault(fn):
             raise xmlrpclib.Fault(GameError.rpc_code, str(error))
         except RuleError, error:
             raise xmlrpclib.Fault(RuleError.rpc_code, str(error))
+        except ProtocolError, error:
+            raise xmlrpclib.Fault(ProtocolError.rpc_code, str(error))
     return catcher
 
 def fault2error(fn):
@@ -36,15 +38,15 @@ def fault2error(fn):
         try:
             return fn(*args)
         except xmlrpclib.Fault, error:
-            if error.faultCode == GameError.rpc_code:
-                raise GameError(error.faultString)
-            elif error.faultCode == RuleError.rpc_code:
-                raise RuleError(error.faultString)
-            else:
-                raise error
+            error_classes = (GameError, RuleError, ProtocolError)
+            for klass in error_classes:
+                if error.faultCode == klass.rpc_code:
+                    raise klass(error.faultString)
+
+            raise error
 
     return catcher
-            
+
 class TupeloXMLRPCInterface(object):
     """
     The RPC interface for the tupelo server.
@@ -52,29 +54,75 @@ class TupeloXMLRPCInterface(object):
 
     def __init__(self):
         super(TupeloXMLRPCInterface, self).__init__()
-        self.game = game.GameController()
+        #self.lobby = Lobby()
+        self.players = []
+        self.games = [game.GameController()]
+        self.methods = [f for f in dir(self) if not f.startswith('_') and callable(getattr(self, f))]
 
     def _get_player(self, player_id):
-        for player in self.game.players:
-            if player.id == player_id: 
-                return player
-        return None
+        """
+        Get player by id.
+        """
+        for plr in self.players:
+            if plr.id == player_id:
+                return plr
+
+        raise GameError('Player %d does not exist' % player_id)
+
+    def _get_game(self, game_id):
+        try:
+            return self.games[game_id]
+        except IndexError:
+            raise GameError('Game %d does not exist' % game_id)
 
     def echo(self, test):
         return test
 
     @error2fault
+    def _dispatch(self, method, params):
+        realname = method.replace('.', '_')
+        if realname in self.methods:
+            func = getattr(self, realname)
+            return func(*params)
+
+        raise ProtocolError('Method "%s" is not supported' % method)
+
     def register_player(self, player):
         """
-        Register a new player to the game.
+        Register a new player to the server.
 
         Return the player id.
         """
         player = rpc.rpc_decode(RPCProxyPlayer, player)
-        self.game.register_player(player)
+        self.players.append(player)
+        player.id = self.players.index(player)
         return player.id
 
-    @error2fault
+    def list_games(self):
+        """
+        List all games on server.
+
+        TODO: format
+        """
+        response = []
+        for i in range(len(self.games)):
+            response.add(i)
+
+        return response
+
+    def game_enter(self, game_id, player_id):
+        """
+        Register a new player to the game.
+
+        Return the player id.
+        TODO: change to take player ID as parameter
+        """
+        game = self._get_game(game_id)
+        player = self._get_player(player_id)
+        game.register_player(player)
+        player.game = game
+        return player.id
+
     def player_quit(self, player_id):
         """
         Player quits.
@@ -84,35 +132,37 @@ class TupeloXMLRPCInterface(object):
         # without allow_none, XMLRPC methods must always return something
         return True
 
-    @error2fault
-    def get_state(self, player_id):
+    def game_get_state(self, game_id, player_id):
+        game = self._get_game(game_id)
         response = {}
-        response['game_state'] = rpc.rpc_encode(self.game.state)
+        response['game_state'] = rpc.rpc_encode(game.state)
         response['hand'] = rpc.rpc_encode(self._get_player(player_id).hand)
         return response
 
-    @error2fault
     def get_events(self, player_id):
         return rpc.rpc_encode(self._get_player(player_id).pop_events())
          
     @error2fault
-    def start_game(self):
-        self.game.start_game()
+    def game_start(self, game_id):
+        game = self._get_game(game_id)
+        game.start_game()
         return True
 
     @error2fault
-    def start_game_with_bots(self):
+    def game_start_with_bots(self, game_id):
+        game = self._get_game(game_id)
         i = 1
-        while len(self.game.players) < 4:
-            self.game.register_player(players.DummyBotPlayer('Robotti %d' % i))
+        while len(game.players) < 4:
+            game.register_player(players.DummyBotPlayer('Robotti %d' % i))
             i += 1
 
-        return self.start_game()
+        return self.game_start(game_id)
 
     @error2fault
-    def play_card(self, player_id, card):
+    def game_play_card(self, game_id, player_id, card):
+        game = self._get_game(game_id)
         player = self._get_player(player_id)
-        self.game.play_card(player, rpc.rpc_decode(Card, card))
+        game.play_card(player, rpc.rpc_decode(Card, card))
         return True
 
 
@@ -123,6 +173,7 @@ class RPCProxyPlayer(players.ThreadedPlayer):
     def __init__(self, name):
         players.ThreadedPlayer.__init__(self, name)
         self.events = Queue.Queue()
+        self.game = None
 
     def vote(self):
         self.play_card()
