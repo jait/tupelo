@@ -8,7 +8,7 @@ import rpc
 from common import GameState, Card, CardSet, GameError, RuleError, ProtocolError
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent
 import Queue
-import game
+from game import GameController
 import copy
 
 DEFAULT_PORT = 8052
@@ -56,7 +56,7 @@ class TupeloXMLRPCInterface(object):
         super(TupeloXMLRPCInterface, self).__init__()
         #self.lobby = Lobby()
         self.players = []
-        self.games = [game.GameController()]
+        self.games = []
         self.methods = [f for f in dir(self) if not f.startswith('_') and callable(getattr(self, f))]
 
     def _get_player(self, player_id):
@@ -110,6 +110,19 @@ class TupeloXMLRPCInterface(object):
 
         return response
 
+    def game_create(self, player_id):
+        """
+        Create a new game and enter it.
+
+        Return the game id.
+        """
+        player = self._get_player(player_id)
+        game = GameController()
+        self.games.append(game)
+        game.id = self.games.index(game)
+        self.game_enter(game.id, player.id)
+        return game.id
+
     def game_enter(self, game_id, player_id):
         """
         Register a new player to the game.
@@ -121,15 +134,18 @@ class TupeloXMLRPCInterface(object):
         player = self._get_player(player_id)
         game.register_player(player)
         player.game = game
-        return player.id
+        return True
 
     def player_quit(self, player_id):
         """
         Player quits.
         """
         # leave the game but don't make the server quit
-        self.game.player_leave(player_id)
+        game = self._get_player(player_id).game
+        if game:
+            game.player_leave(player_id)
         # without allow_none, XMLRPC methods must always return something
+        # TODO: we need to kill the old game instance
         return True
 
     def game_get_state(self, game_id, player_id):
@@ -256,10 +272,11 @@ class XMLRPCProxyController(object):
             server_uri = 'http://' + server_uri
 
         self.server = xmlrpclib.ServerProxy(server_uri)
+        self.game_id = None
 
     @fault2error
     def play_card(self, player, card):
-        self.server.play_card(player.id, rpc.rpc_encode(card))
+        self.server.game.play_card(self.game_id, player.id, rpc.rpc_encode(card))
 
     @fault2error
     def get_events(self, player_id):
@@ -267,7 +284,7 @@ class XMLRPCProxyController(object):
 
     @fault2error
     def get_state(self, player_id):
-        state = self.server.get_state(player_id)
+        state = self.server.game.get_state(self.game_id, player_id)
         state['game_state'] = rpc.rpc_decode(GameState, state['game_state'])
         state['hand'] = rpc.rpc_decode(CardSet, state['hand'])
         return state
@@ -283,5 +300,5 @@ class XMLRPCProxyController(object):
 
     @fault2error
     def start_game_with_bots(self):
-        return self.server.start_game_with_bots()
+        return self.server.game.start_with_bots(self.game_id)
 

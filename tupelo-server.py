@@ -27,7 +27,8 @@ def _runserver():
         server.serve_forever()
     except KeyboardInterrupt:
         logging.info('Shutting down')
-        rpciface.game.shutdown()
+        for game in rpciface.games:
+            game.shutdown()
         
 if __name__ == '__main__':
     _runserver()
