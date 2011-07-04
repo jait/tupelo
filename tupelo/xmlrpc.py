@@ -127,8 +127,7 @@ class TupeloXMLRPCInterface(object):
         """
         Register a new player to the game.
 
-        Return the player id.
-        TODO: change to take player ID as parameter
+        Return True
         """
         game = self._get_game(game_id)
         player = self._get_player(player_id)
@@ -257,7 +256,6 @@ class XMLRPCCliPlayer(players.CliPlayer):
                 for event in events:
                     self.handle_event(event)
 
-            # TODO: cannot assume that turn == player ID
             if self.game_state.turn_id == self.id:
                 break
 
