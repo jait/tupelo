@@ -54,10 +54,10 @@ class TupeloXMLRPCInterface(object):
 
     def __init__(self):
         super(TupeloXMLRPCInterface, self).__init__()
-        #self.lobby = Lobby()
         self.players = []
         self.games = []
-        self.methods = [f for f in dir(self) if not f.startswith('_') and callable(getattr(self, f))]
+        self.methods = [f for f in dir(self) if not f.startswith('_')
+                and callable(getattr(self, f))]
 
     def _get_player(self, player_id):
         """
@@ -257,7 +257,8 @@ class XMLRPCCliPlayer(players.CliPlayer):
                 for event in events:
                     self.handle_event(event)
 
-            if self.game_state.turn == self.id:
+            # TODO: cannot assume that turn == player ID
+            if self.game_state.turn_id == self.id:
                 break
 
 

@@ -2,7 +2,6 @@
 # vim: set sts=4 sw=4 et:
 
 import logging
-import tupelo
 from tupelo import xmlrpc
 from optparse import OptionParser
 from tupelo.players import CliPlayer, CountingBotPlayer, DummyBotPlayer

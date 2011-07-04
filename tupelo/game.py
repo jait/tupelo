@@ -64,6 +64,22 @@ class GameController(object):
 
         return None
 
+    def _get_player_in_turn(self, turn):
+        """
+        Get player who is in turn.
+        """
+        if turn >= 0:
+            return self.players[turn % 4]
+
+        return None
+
+    def _next_in_turn(self, thenext=None):
+        """
+        Set the next player in turn.
+        """
+        self.state.next_in_turn(thenext)
+        self.state.turn_id = self._get_player_in_turn(self.state.turn).id
+
     def _stop_players(self):
         """
         Stop all running players.
@@ -128,8 +144,8 @@ class GameController(object):
         self.shutdown()
 
     def _signal_act(self):
-        self.get_player(self.state.turn).act(self, self.state)
-            
+        self._get_player_in_turn(self.state.turn).act(self, self.state)
+
     def _start_new_hand(self):
         """
         Start a new hand.
@@ -159,7 +175,7 @@ class GameController(object):
         # uncomment following to skip voting
         #self.state.state = ONGOING
         # start the game
-        self.state.next_in_turn(self.state.dealer + 1)
+        self._next_in_turn(self.state.dealer + 1)
         self._signal_act()
 
     def _trick_played(self):
@@ -183,7 +199,7 @@ class GameController(object):
         if self.state.tricks[0] + self.state.tricks[1] == 13:
             self._hand_played()
         else:
-            self.state.next_in_turn(high_played_by.id)
+            self._next_in_turn(self.players.index(high_played_by))
             self._signal_act()
 
     def _hand_played(self):
@@ -255,14 +271,14 @@ class GameController(object):
         if card.suit == common.DIAMOND or card.suit == common.HEART:
             self.state.mode = RAMI
             self.state.rami_chosen_by = player
-            self.state.next_in_turn(card.played_by - 1)
+            self._next_in_turn(self.players.index(player) - 1)
             self._begin_game()
         elif len(table) == 4:
             self.state.mode = NOLO
-            self.state.next_in_turn()
+            self._next_in_turn()
             self._begin_game()
         else:
-            self.state.next_in_turn()
+            self._next_in_turn()
 
         self._signal_act()
 
@@ -272,7 +288,7 @@ class GameController(object):
         else:
             self._send_msg('Nolo it is')
 
-        self._send_msg('Game on, %s begins!' % self.get_player(self.state.turn))
+        self._send_msg('Game on, %s begins!' % self._get_player_in_turn(self.state.turn))
 
         self.state.table.clear()
         self.state.state = ONGOING
@@ -281,7 +297,7 @@ class GameController(object):
         """
         Play one card on the table.
         """
-        if self.state.turn != player.id:
+        if self._get_player_in_turn(self.state.turn).id != player.id:
             raise RuleError('Not your turn')
 
         table = self.state.table
@@ -315,7 +331,7 @@ class GameController(object):
                 self.state.turn = turn_backup
                 self._trick_played()
             else:
-                self.state.next_in_turn()
+                self._next_in_turn()
                 # fire signals
                 for plr in self.players:
                     plr.card_played(player, card, self.state)

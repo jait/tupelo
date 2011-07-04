@@ -307,7 +307,8 @@ class GameState(rpc.RPCSerializable):
     """
     State of a single game.
     """
-    rpc_attrs = ('state', 'mode', 'table:CardSet', 'score', 'tricks', 'turn')
+    rpc_attrs = ('state', 'mode', 'table:CardSet', 'score', 'tricks', 'turn',
+            'turn_id')
 
     def __init__(self):
         rpc.RPCSerializable.__init__(self)
@@ -318,6 +319,7 @@ class GameState(rpc.RPCSerializable):
         self.tricks = [0, 0]
         self.rami_chosen_by = None
         self.turn = 0
+        self.turn_id = 0
         self.dealer = 0
 
     def update(self, new_state):
