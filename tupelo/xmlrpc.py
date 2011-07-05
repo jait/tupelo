@@ -157,13 +157,11 @@ class TupeloXMLRPCInterface(object):
     def get_events(self, player_id):
         return rpc.rpc_encode(self._get_player(player_id).pop_events())
          
-    @error2fault
     def game_start(self, game_id):
         game = self._get_game(game_id)
         game.start_game()
         return True
 
-    @error2fault
     def game_start_with_bots(self, game_id):
         game = self._get_game(game_id)
         i = 1
@@ -173,7 +171,6 @@ class TupeloXMLRPCInterface(object):
 
         return self.game_start(game_id)
 
-    @error2fault
     def game_play_card(self, game_id, player_id, card):
         game = self._get_game(game_id)
         player = self._get_player(player_id)
