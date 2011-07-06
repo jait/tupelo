@@ -102,11 +102,11 @@ class TupeloXMLRPCInterface(object):
         """
         List all games on server.
 
-        TODO: format
+        Return a dict: game ID => list of player IDs
         """
-        response = []
-        for i in range(len(self.games)):
-            response.add(i)
+        response = {}
+        for game in self.games:
+            response[game.id] = [player.id for player in game.players]
 
         return response
 
@@ -118,6 +118,7 @@ class TupeloXMLRPCInterface(object):
         """
         player = self._get_player(player_id)
         game = GameController()
+        # TODO: slight chance of race
         self.games.append(game)
         game.id = self.games.index(game)
         self.game_enter(game.id, player.id)
@@ -139,12 +140,18 @@ class TupeloXMLRPCInterface(object):
         """
         Player quits.
         """
-        # leave the game but don't make the server quit
-        game = self._get_player(player_id).game
+        # leave the game. Does not necessarily end the game.
+        player = self._get_player(player_id)
+        game = player.game
         if game:
             game.player_leave(player_id)
+            player.game = None
+
+        # if the game was terminated we need to kill the old game instance
+        if len(game.players) == 0:
+            self.games.remove(game)
+
         # without allow_none, XMLRPC methods must always return something
-        # TODO: we need to kill the old game instance
         return True
 
     def game_get_state(self, game_id, player_id):

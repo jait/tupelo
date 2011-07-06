@@ -4,7 +4,6 @@
 import threading
 from common import CardSet, SPADE, CLUB, HEART, DIAMOND
 from common import NOLO, RAMI
-from common import STOPPED, VOTING, ONGOING
 from common import RuleError, UserQuit, GameState
 import rpc
 
@@ -110,9 +109,9 @@ class ThreadedPlayer(threading.Thread, Player):
 
             self.wait_for_turn()
 
-            if self.game_state.state == STOPPED:
+            if self.game_state.state == GameState.STOPPED:
                 break
-            elif self.game_state.state == VOTING:
+            elif self.game_state.state == GameState.VOTING:
                 try:
                     self.vote()
                 except UserQuit, error:
@@ -122,7 +121,7 @@ class ThreadedPlayer(threading.Thread, Player):
                 except Exception, error:
                     print 'Error:', error
                     raise
-            else:
+            elif self.game_state.state == GameState.ONGOING:
                 try:
                     self.play_card()
                 except UserQuit, error:
@@ -132,6 +131,8 @@ class ThreadedPlayer(threading.Thread, Player):
                 except Exception, error:
                     print 'Error:', error
                     raise
+            else:
+                print "Warning: unknown state %d" % self.game_state.state
         
         print '%s exiting' % self
 
@@ -301,9 +302,9 @@ class CountingBotPlayer(DummyBotPlayer):
         if player == self:
             return
 
-        if game_state.state == VOTING:
+        if game_state.state == GameState.VOTING:
             pass
-        elif game_state.state == ONGOING:
+        elif game_state.state == GameState.ONGOING:
             #print "removing %s  from %s" %(card, self.cards_left)
             try:
                 self.cards_left.remove(card)
@@ -408,7 +409,7 @@ class CliPlayer(ThreadedPlayer):
         else:
             player_str = '%s' % player
 
-        if game_state.state == VOTING:
+        if game_state.state == GameState.VOTING:
             print '%s voted %s' % (player_str, card)
         else:
             print '%s played %s' % (player_str, card)

@@ -4,7 +4,7 @@
 import common
 from common import CardSet
 from common import NOLO, RAMI
-from common import STOPPED, VOTING, ONGOING, TURN_NONE
+from common import TURN_NONE
 from common import RuleError, GameError, GameState 
 import players
 import threading
@@ -45,7 +45,9 @@ class GameController(object):
         if plr:
             self.players.remove(plr)
 
-        self._reset()
+        # reset the game unless we are still in OPEN state
+        if self.state.state != GameState.OPEN:
+            self._reset()
 
     def player_quit(self, player_id):
         """
@@ -84,7 +86,7 @@ class GameController(object):
         """
         Stop all running players.
         """
-        self.state.state = STOPPED
+        self.state.state = GameState.STOPPED
         for player in self.players:
             if player:
                 player.act(self, self.state)
@@ -170,10 +172,10 @@ class GameController(object):
         # voting 
         self.state.mode = NOLO
         self.state.rami_chosen_by = None
-        self.state.state = VOTING
+        self.state.state = GameState.VOTING
 
         # uncomment following to skip voting
-        #self.state.state = ONGOING
+        #self.state.state = GameState.ONGOING
         # start the game
         self._next_in_turn(self.state.dealer + 1)
         self._signal_act()
@@ -291,7 +293,7 @@ class GameController(object):
         self._send_msg('Game on, %s begins!' % self._get_player_in_turn(self.state.turn))
 
         self.state.table.clear()
-        self.state.state = ONGOING
+        self.state.state = GameState.ONGOING
             
     def play_card(self, player, card):
         """
@@ -302,10 +304,10 @@ class GameController(object):
 
         table = self.state.table
 
-        if self.state.state == VOTING:
+        if self.state.state == GameState.VOTING:
             self._vote_card(player, card)
 
-        elif self.state.state == ONGOING:
+        elif self.state.state == GameState.ONGOING:
             # make sure that suit is followed
             if len(table) > 0 and card.suit != table[0].suit:
                 if len(player.hand.get_cards(suit=table[0].suit)) > 0:
