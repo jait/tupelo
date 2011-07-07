@@ -19,7 +19,7 @@ class TestTupeloXMLRPCInterface(unittest.TestCase):
     def testRegisterPlayer(self):
         iface = I()
         encoded = self._encoded_player()
-        p_id = iface.register_player(encoded)
+        p_id = iface.player_register(encoded)
         self.assert_(isinstance(p_id, int))
 
     def testGame(self):
@@ -29,7 +29,7 @@ class TestTupeloXMLRPCInterface(unittest.TestCase):
         self.assertEqual(len(gamelist), 0)
         # register
         p_encoded = self._encoded_player()
-        p_id = iface.register_player(p_encoded)
+        p_id = iface.player_register(p_encoded)
         # create game
         g_id = iface.game_create(p_id)
         # list
@@ -53,7 +53,7 @@ class TestTupeloXMLRPCInterface(unittest.TestCase):
 
         p_ids = []
         for p in plrs:
-            p_ids.append(iface.register_player(p))
+            p_ids.append(iface.player_register(p))
 
         g_id = iface.game_create(p_ids[0])
         ret = iface.game_enter(g_id, p_ids[1])

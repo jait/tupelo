@@ -87,7 +87,7 @@ class TupeloXMLRPCInterface(object):
 
         raise ProtocolError('Method "%s" is not supported' % method)
 
-    def register_player(self, player):
+    def player_register(self, player):
         """
         Register a new player to the server.
 
@@ -294,12 +294,12 @@ class XMLRPCProxyController(object):
 
     @fault2error
     def player_quit(self, player_id):
-        self.server.player_quit(player_id)
+        self.server.player.quit(player_id)
 
     @fault2error
     def register_player(self, player):
         player.controller = self
-        player.id = self.server.register_player(rpc.rpc_encode(player))
+        player.id = self.server.player.register(rpc.rpc_encode(player))
 
     @fault2error
     def start_game_with_bots(self):
