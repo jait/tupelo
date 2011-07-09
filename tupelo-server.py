@@ -22,7 +22,7 @@ def _runserver():
     server = SimpleXMLRPCServer((LISTEN_ADDR, opts.port))
     rpciface = xmlrpc.TupeloXMLRPCInterface()
     server.register_instance(rpciface)
-    logging.info('Tupelo server serving at port %d' % opts.port)
+    logging.info('Tupelo server serving at port %d', opts.port)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
