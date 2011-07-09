@@ -14,7 +14,7 @@ def _run_remote(server_addr):
     game = xmlrpc.XMLRPCProxyController(server_addr)
     player = xmlrpc.XMLRPCCliPlayer('Humaani')
     game.register_player(player)
-    game.game_id = game.server.game_create(player.id)
+    game.game_id = game.server.game.create(player.id)
     player.start()
     game.start_game_with_bots()
     

@@ -323,7 +323,7 @@ class CliPlayer(ThreadedPlayer):
         Pick one card from the player's hand.
         """
         print 'Your hand:'
-        print '  '.join(' %s' % (card) for card in self.hand)
+        print u'  '.join(u'%3s' % (card) for card in self.hand)
         for i in range(0, len(self.hand)):
             print '%3d ' % (i + 1),
         print
