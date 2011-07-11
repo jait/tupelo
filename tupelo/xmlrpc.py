@@ -5,11 +5,12 @@ import time
 import xmlrpclib
 import players
 import rpc
-from common import GameState, Card, CardSet, GameError, RuleError, ProtocolError
+from common import GameState, Card, CardSet, GameError, RuleError, ProtocolError, traced
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent
 import Queue
 from game import GameController
 import copy
+import inspect
 
 DEFAULT_PORT = 8052
 
@@ -47,17 +48,31 @@ def fault2error(fn):
 
     return catcher
 
-class TupeloXMLRPCInterface(object):
+class TupeloRPCInterface(object):
     """
     The RPC interface for the tupelo server.
     """
 
     def __init__(self):
-        super(TupeloXMLRPCInterface, self).__init__()
+        super(TupeloRPCInterface, self).__init__()
         self.players = []
         self.games = []
-        self.methods = [f for f in dir(self) if not f.startswith('_')
-                and callable(getattr(self, f))]
+        self.methods = self._get_methods()
+
+    def _get_methods(self):
+        """
+        Get a list of RPC methods that this object supports.
+
+        Return a dict of method_name => [argument names]
+        """
+        method_names = [f for f in dir(self) if not f.startswith('_')]
+        methods = dict()
+        for mname in method_names:
+            func = getattr(self, mname)
+            if callable(func):
+                methods[mname] = inspect.getargspec(func)[0]
+        
+        return methods
 
     def _get_player(self, player_id):
         """
@@ -80,13 +95,31 @@ class TupeloXMLRPCInterface(object):
 
     @error2fault
     def _dispatch(self, method, params):
+        """
+        Dispatch an XML-RPC call.
+        """
         realname = method.replace('.', '_')
-        if realname in self.methods:
+        if realname in self.methods.keys():
             func = getattr(self, realname)
             return func(*params)
 
         raise ProtocolError('Method "%s" is not supported' % method)
 
+    def _json_dispatch(self, method, kwparams):
+        """
+        Dispatch a json method call to method with kwparams.
+        """
+        if method in self.methods.keys():
+            func = getattr(self, method)
+            # strip out invalid params
+            for k in kwparams.keys():
+                if k not in self.methods[method]:
+                    del kwparams[k]
+               
+            return func(**kwparams)
+
+        raise ProtocolError('Method "%s" is not supported' % method)
+        
     def player_register(self, player):
         """
         Register a new player to the server.
@@ -116,6 +149,7 @@ class TupeloXMLRPCInterface(object):
 
         Return the game id.
         """
+        player_id = int(player_id)
         player = self._get_player(player_id)
         game = GameController()
         # TODO: slight chance of race
@@ -130,8 +164,8 @@ class TupeloXMLRPCInterface(object):
 
         Return True
         """
-        game = self._get_game(game_id)
-        player = self._get_player(player_id)
+        game = self._get_game(int(game_id))
+        player = self._get_player(int(player_id))
         game.register_player(player)
         player.game = game
         return True
@@ -141,6 +175,7 @@ class TupeloXMLRPCInterface(object):
         Player quits.
         """
         # leave the game. Does not necessarily end the game.
+        player_id = int(player_id)
         player = self._get_player(player_id)
         game = player.game
         if game:
@@ -155,21 +190,22 @@ class TupeloXMLRPCInterface(object):
         return True
 
     def game_get_state(self, game_id, player_id):
-        game = self._get_game(game_id)
+        game = self._get_game(int(game_id))
         response = {}
         response['game_state'] = rpc.rpc_encode(game.state)
-        response['hand'] = rpc.rpc_encode(self._get_player(player_id).hand)
+        response['hand'] = rpc.rpc_encode(self._get_player(int(player_id)).hand)
         return response
 
     def get_events(self, player_id):
-        return rpc.rpc_encode(self._get_player(player_id).pop_events())
+        return rpc.rpc_encode(self._get_player(int(player_id)).pop_events())
          
     def game_start(self, game_id):
-        game = self._get_game(game_id)
+        game = self._get_game(int(game_id))
         game.start_game()
         return True
 
     def game_start_with_bots(self, game_id):
+        game_id = int(game_id)
         game = self._get_game(game_id)
         i = 1
         while len(game.players) < 4:
@@ -179,8 +215,8 @@ class TupeloXMLRPCInterface(object):
         return self.game_start(game_id)
 
     def game_play_card(self, game_id, player_id, card):
-        game = self._get_game(game_id)
-        player = self._get_player(player_id)
+        game = self._get_game(int(game_id))
+        player = self._get_player(int(player_id))
         game.play_card(player, rpc.rpc_decode(Card, card))
         return True
 

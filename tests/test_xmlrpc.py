@@ -6,7 +6,7 @@ import unittest
 import types
 from tupelo import xmlrpc
 from tupelo import rpc
-from tupelo.xmlrpc import TupeloXMLRPCInterface as I
+from tupelo.xmlrpc import TupeloRPCInterface as I
 from tupelo.players import Player
 
 class TestTupeloXMLRPCInterface(unittest.TestCase):
