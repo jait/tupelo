@@ -181,10 +181,9 @@ class TupeloRPCInterface(object):
         if game:
             game.player_leave(player_id)
             player.game = None
-
-        # if the game was terminated we need to kill the old game instance
-        if len(game.players) == 0:
-            self.games.remove(game)
+            # if the game was terminated we need to kill the old game instance
+            if len(game.players) == 0:
+                self.games.remove(game)
 
         # without allow_none, XMLRPC methods must always return something
         return True

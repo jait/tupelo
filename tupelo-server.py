@@ -64,7 +64,12 @@ class TupeloServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
         params = parse_qs(parsed[4])
         # use only the first value of any given parameter
         for k, v in params.items():
-            params[k] = v[0]
+            # try to decode a json parameter
+            # if it fails, fall back to plain string
+            try:
+                params[k] = json.loads(v[0])
+            except:
+                params[k] = v[0]
 
         method = None
         if self.json_path_prefix: 
