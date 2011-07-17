@@ -168,7 +168,7 @@ class TupeloRPCInterface(object):
         player = self._get_player(int(player_id))
         game.register_player(player)
         player.game = game
-        return True
+        return game_id;
 
     def player_quit(self, player_id):
         """
