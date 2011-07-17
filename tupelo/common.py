@@ -9,11 +9,6 @@ import rpc
 NOLO = 0
 RAMI = 1
 
-# game state
-STOPPED = 0
-VOTING = 1
-ONGOING = 2
-
 TURN_NONE = -1
 
 
@@ -45,6 +40,13 @@ class RuleError(Exception):
     Error for breaking the game rules.
     """
     rpc_code = 2
+
+
+class ProtocolError(Exception):
+    """
+    Error for problems in using the RPC protocol.
+    """
+    rpc_code = 3
 
 
 class UserQuit(GameError):
@@ -300,17 +302,25 @@ class GameState(rpc.RPCSerializable):
     """
     State of a single game.
     """
-    rpc_attrs = ('state', 'mode', 'table:CardSet', 'score', 'tricks', 'turn')
+    rpc_attrs = ('state', 'mode', 'table:CardSet', 'score', 'tricks', 'turn',
+            'turn_id')
+
+    # states
+    OPEN = 0
+    VOTING = 1
+    ONGOING = 2
+    STOPPED = 3
 
     def __init__(self):
         rpc.RPCSerializable.__init__(self)
-        self.state = STOPPED
+        self.state = GameState.OPEN
         self.mode = NOLO
         self.table = CardSet()
         self.score = [0, 0]
         self.tricks = [0, 0]
         self.rami_chosen_by = None
         self.turn = 0
+        self.turn_id = 0
         self.dealer = 0
 
     def update(self, new_state):
@@ -331,7 +341,8 @@ class GameState(rpc.RPCSerializable):
             self.turn = (thenext) % 4
 
     def __str__(self):
-        statestr = {STOPPED: 'STOPPED', VOTING: 'VOTING', ONGOING: 'ONGOING'}
+        statestr = {GameState.OPEN: 'OPEN', GameState.STOPPED: 'STOPPED',
+                GameState.VOTING: 'VOTING', GameState.ONGOING: 'ONGOING'}
         modestr = {NOLO: 'NOLO', RAMI: 'RAMI'}
         return "state: %s, mode: %s, score: %s, tricks: %s, dealer: %d" % \
                 (statestr[self.state], modestr[self.mode], str(self.score),
