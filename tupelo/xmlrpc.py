@@ -71,7 +71,7 @@ class TupeloRPCInterface(object):
             func = getattr(self, mname)
             if callable(func):
                 methods[mname] = inspect.getargspec(func)[0]
-        
+
         return methods
 
     def _get_player(self, player_id):
@@ -115,11 +115,11 @@ class TupeloRPCInterface(object):
             for k in kwparams.keys():
                 if k not in self.methods[method]:
                     del kwparams[k]
-               
+
             return func(**kwparams)
 
         raise ProtocolError('Method "%s" is not supported' % method)
-        
+
     def player_register(self, player):
         """
         Register a new player to the server.

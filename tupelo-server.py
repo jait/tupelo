@@ -72,7 +72,7 @@ class TupeloServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
                 params[k] = v[0]
 
         method = None
-        if self.json_path_prefix: 
+        if self.json_path_prefix:
             if path.startswith(self.json_path_prefix):
                 method = path[len(self.json_path_prefix):].replace('/', '_')
         else:
