@@ -7,11 +7,11 @@ except ImportError:
     from distutils.core import setup
 
 
-version = "0.0.1"
+VERSION = "0.0.2"
 
 setup (name = "tupelo",
     description = "Random code around a card game called Tuppi",
-    version = version,
+    version = VERSION,
     author = "Jari Tenhunen",
     author_email = "jari.tenhunen@iki.fi",
     license = "BSD",

@@ -4,7 +4,7 @@
 import common
 from common import CardSet
 from common import NOLO, RAMI
-from common import STOPPED, VOTING, ONGOING, TURN_NONE
+from common import TURN_NONE
 from common import RuleError, GameError, GameState 
 import players
 import threading
@@ -22,16 +22,22 @@ class GameController(object):
         self.players = []
         self.state = GameState()
         self.shutdown_event = threading.Event()
+        self.id = None
 
     def register_player(self, player):
         """
         Register a new Player.
         """
+        if player.id in [pl.id for pl in self.players]:
+            raise GameError('Player already registered to game')
+
         if len(self.players) == 4:
             raise GameError('Already 4 players registered')
 
         self.players.append(player)
-        player.id = self.players.index(player)
+        # TODO: with this logic we might get players with colliding IDs
+        if player.id == -1:
+            player.id = self.players.index(player)
         player.team = player.id % 2
 
     def player_leave(self, player_id):
@@ -43,7 +49,9 @@ class GameController(object):
         if plr:
             self.players.remove(plr)
 
-        self._reset()
+        # reset the game unless we are still in OPEN state
+        if self.state.state != GameState.OPEN:
+            self._reset()
 
     def player_quit(self, player_id):
         """
@@ -62,11 +70,27 @@ class GameController(object):
 
         return None
 
+    def _get_player_in_turn(self, turn):
+        """
+        Get player who is in turn.
+        """
+        if turn >= 0:
+            return self.players[turn % 4]
+
+        return None
+
+    def _next_in_turn(self, thenext=None):
+        """
+        Set the next player in turn.
+        """
+        self.state.next_in_turn(thenext)
+        self.state.turn_id = self._get_player_in_turn(self.state.turn).id
+
     def _stop_players(self):
         """
         Stop all running players.
         """
-        self.state.state = STOPPED
+        self.state.state = GameState.STOPPED
         for player in self.players:
             if player:
                 player.act(self, self.state)
@@ -126,8 +150,8 @@ class GameController(object):
         self.shutdown()
 
     def _signal_act(self):
-        self.get_player(self.state.turn).act(self, self.state)
-            
+        self._get_player_in_turn(self.state.turn).act(self, self.state)
+
     def _start_new_hand(self):
         """
         Start a new hand.
@@ -138,26 +162,26 @@ class GameController(object):
         # create a full deck
         deck = CardSet.new_full_deck()
 
-        logging.debug('deck is %s' % str(deck))
+        logging.debug('deck is %s', str(deck))
         deck.shuffle()
-        logging.debug('shuffled deck %s' % str(deck))
+        logging.debug('shuffled deck %s', str(deck))
 
         deck.deal([player.hand for player in self.players])
 
         for player in self.players:
             player.hand.sort()
-            logging.debug("%s's hand: %s" % (player.player_name, 
-                str(player.hand)))
+            logging.debug("%s's hand: %s", player.player_name,
+                str(player.hand))
 
         # voting 
         self.state.mode = NOLO
         self.state.rami_chosen_by = None
-        self.state.state = VOTING
+        self.state.state = GameState.VOTING
 
         # uncomment following to skip voting
-        #self.state.state = ONGOING
+        #self.state.state = GameState.ONGOING
         # start the game
-        self.state.next_in_turn(self.state.dealer + 1)
+        self._next_in_turn(self.state.dealer + 1)
         self._signal_act()
 
     def _trick_played(self):
@@ -181,7 +205,7 @@ class GameController(object):
         if self.state.tricks[0] + self.state.tricks[1] == 13:
             self._hand_played()
         else:
-            self.state.next_in_turn(high_played_by.id)
+            self._next_in_turn(self.players.index(high_played_by))
             self._signal_act()
 
     def _hand_played(self):
@@ -253,14 +277,14 @@ class GameController(object):
         if card.suit == common.DIAMOND or card.suit == common.HEART:
             self.state.mode = RAMI
             self.state.rami_chosen_by = player
-            self.state.next_in_turn(card.played_by - 1)
+            self._next_in_turn(self.players.index(player) - 1)
             self._begin_game()
         elif len(table) == 4:
             self.state.mode = NOLO
-            self.state.next_in_turn()
+            self._next_in_turn()
             self._begin_game()
         else:
-            self.state.next_in_turn()
+            self._next_in_turn()
 
         self._signal_act()
 
@@ -270,24 +294,24 @@ class GameController(object):
         else:
             self._send_msg('Nolo it is')
 
-        self._send_msg('Game on, %s begins!' % self.get_player(self.state.turn))
+        self._send_msg('Game on, %s begins!' % self._get_player_in_turn(self.state.turn))
 
         self.state.table.clear()
-        self.state.state = ONGOING
+        self.state.state = GameState.ONGOING
             
     def play_card(self, player, card):
         """
         Play one card on the table.
         """
-        if self.state.turn != player.id:
+        if self._get_player_in_turn(self.state.turn).id != player.id:
             raise RuleError('Not your turn')
 
         table = self.state.table
 
-        if self.state.state == VOTING:
+        if self.state.state == GameState.VOTING:
             self._vote_card(player, card)
 
-        elif self.state.state == ONGOING:
+        elif self.state.state == GameState.ONGOING:
             # make sure that suit is followed
             if len(table) > 0 and card.suit != table[0].suit:
                 if len(player.hand.get_cards(suit=table[0].suit)) > 0:
@@ -313,7 +337,7 @@ class GameController(object):
                 self.state.turn = turn_backup
                 self._trick_played()
             else:
-                self.state.next_in_turn()
+                self._next_in_turn()
                 # fire signals
                 for plr in self.players:
                     plr.card_played(player, card, self.state)
