@@ -28,10 +28,14 @@ class GameController(object):
         """
         Register a new Player.
         """
+        if player.id in [pl.id for pl in self.players]:
+            raise GameError('Player already registered to game')
+
         if len(self.players) == 4:
             raise GameError('Already 4 players registered')
 
         self.players.append(player)
+        # TODO: with this logic we might get players with colliding IDs
         if player.id == -1:
             player.id = self.players.index(player)
         player.team = player.id % 2

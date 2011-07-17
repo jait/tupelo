@@ -237,6 +237,9 @@ class TupeloRPCInterface(object):
         """
         game = self._get_game(int(game_id))
         player = self._get_player(int(player_id))
+        if player.game:
+            raise GameError("Player is already in a game")
+
         game.register_player(player)
         player.game = game
         return game_id
@@ -256,7 +259,7 @@ class TupeloRPCInterface(object):
             if len(game.players) == 0:
                 self.games.remove(game)
 
-        # without allow_none, XMLRPC methods must always return something
+        # without allow_none, XML-RPC methods must always return something
         return True
 
     def game_get_state(self, game_id, player_id):
