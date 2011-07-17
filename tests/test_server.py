@@ -4,12 +4,11 @@
 
 import unittest
 import types
-from tupelo import xmlrpc
 from tupelo import rpc
-from tupelo.xmlrpc import TupeloRPCInterface as I
+from tupelo.server import TupeloRPCInterface as I
 from tupelo.players import Player
 
-class TestTupeloXMLRPCInterface(unittest.TestCase):
+class TestTupeloRPCInterface(unittest.TestCase):
 
     def _encoded_player(self, name='mörkö'):
         player = Player(name)

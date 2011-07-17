@@ -158,16 +158,16 @@ class GameController(object):
         # create a full deck
         deck = CardSet.new_full_deck()
 
-        logging.debug('deck is %s' % str(deck))
+        logging.debug('deck is %s', str(deck))
         deck.shuffle()
-        logging.debug('shuffled deck %s' % str(deck))
+        logging.debug('shuffled deck %s', str(deck))
 
         deck.deal([player.hand for player in self.players])
 
         for player in self.players:
             player.hand.sort()
-            logging.debug("%s's hand: %s" % (player.player_name, 
-                str(player.hand)))
+            logging.debug("%s's hand: %s", player.player_name,
+                str(player.hand))
 
         # voting 
         self.state.mode = NOLO

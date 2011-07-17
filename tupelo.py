@@ -3,6 +3,7 @@
 
 import logging
 from tupelo import xmlrpc
+from tupelo.server import DEFAULT_PORT
 from optparse import OptionParser
 from tupelo.players import CliPlayer, CountingBotPlayer, DummyBotPlayer
 from tupelo.game import GameController
@@ -42,7 +43,7 @@ def _main():
             help="Play using a remote server")
     parser.add_option("-s", "--server", dest='server', action="store",
             type="string", metavar='SERVER:PORT', 
-            default="localhost:%d" % xmlrpc.DEFAULT_PORT,
+            default="localhost:%d" % DEFAULT_PORT,
             help="Use given server and port")
     (opts, args) = parser.parse_args()
 
