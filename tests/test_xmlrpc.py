@@ -57,11 +57,11 @@ class TestTupeloXMLRPCInterface(unittest.TestCase):
 
         g_id = iface.game_create(p_ids[0])
         ret = iface.game_enter(g_id, p_ids[1])
-        self.assertEqual(ret, True)
+        self.assertEqual(ret, g_id)
         ret = iface.game_enter(g_id, p_ids[2])
-        self.assertEqual(ret, True)
+        self.assertEqual(ret, g_id)
         ret = iface.game_enter(g_id, p_ids[3])
-        self.assertEqual(ret, True)
+        self.assertEqual(ret, g_id)
 
         gamelist = iface.list_games()
         self.assert_(gamelist.has_key(g_id))
