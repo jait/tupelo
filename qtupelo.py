@@ -22,6 +22,7 @@ from tupelo.qcommon import GCard, GPlayer, GXMLRPCPlayer
 from tupelo.common import traced
 from tupelo import common
 from tupelo import xmlrpc
+from tupelo.server import DEFAULT_PORT
 import logging
 from optparse import OptionParser
 from tupelo.game import GameController
@@ -59,7 +60,7 @@ class GTable(QWidget):
         else:
             index = (my_place - len(cardset)) % 4
 
-        for i in range(0,4):
+        for i in range(0, 4):
             try:
                 card = cardset[i]
                 gcard = GCard(card.suit, card.value, parent=self)
@@ -186,7 +187,7 @@ def main():
             help="Play using a remote server")
     parser.add_option("-s", "--server", dest='server', action="store",
             type="string", metavar='SERVER:PORT',
-            default="localhost:%d" % xmlrpc.DEFAULT_PORT,
+            default="localhost:%d" % DEFAULT_PORT,
             help="Use given server and port")
     (opts, args) = parser.parse_args()
 

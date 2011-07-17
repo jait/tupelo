@@ -13,7 +13,6 @@ except ImportError:
 
 from common import Card, Suit
 from players import Player, CliPlayer
-from common import STOPPED, VOTING, ONGOING
 from common import GameState, CardSet, UserQuit, traced
 from xmlrpc import XMLRPCCliPlayer
 import threading
@@ -186,7 +185,7 @@ class _GPlayerBase(QtCore.QObject):
         else:
             player_str = '%s' % player
 
-        if game_state.state == VOTING:
+        if game_state.state == GameState.VOTING:
             msg = '%s voted %s' % (player_str, card)
         else:
             msg = '%s played %s' % (player_str, card)
