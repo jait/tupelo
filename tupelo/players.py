@@ -40,7 +40,12 @@ class Player(rpc.RPCSerializable):
         """
         Decode an RPC-form object into an instance of cls.
         """
-        return cls(rpcobj['player_name'])
+        player = cls(rpcobj['player_name'])
+        for attr in ('id', 'team'):
+            if rpcobj.has_key(attr):
+                setattr(player, attr, rpcobj[attr])
+
+        return player
 
     def card_played(self, player, card, game_state):
         """

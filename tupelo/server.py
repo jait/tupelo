@@ -156,6 +156,9 @@ class TupeloRPCInterface(object):
         raise GameError('Player %d does not exist' % player_id)
 
     def _get_game(self, game_id):
+        """
+        Get game by id or raise an error.
+        """
         try:
             return self.games[game_id]
         except IndexError:
@@ -202,15 +205,33 @@ class TupeloRPCInterface(object):
         player.id = self.players.index(player)
         return player.id
 
-    def list_games(self):
+    def player_quit(self, player_id):
+        """
+        Player quits.
+        """
+        # leave the game. Does not necessarily end the game.
+        player_id = int(player_id)
+        player = self._get_player(player_id)
+        game = player.game
+        if game:
+            game.player_leave(player_id)
+            player.game = None
+            # if the game was terminated we need to kill the old game instance
+            if len(game.players) == 0:
+                self.games.remove(game)
+
+        # without allow_none, XML-RPC methods must always return something
+        return True
+
+    def game_list_all(self):
         """
         List all games on server.
 
-        Return a dict: game ID => list of player IDs
+        Return a dict: game ID => list of players
         """
         response = {}
         for game in self.games:
-            response[game.id] = [player.id for player in game.players]
+            response[game.id] = [rpc.rpc_encode(player) for player in game.players]
 
         return response
 
@@ -244,25 +265,10 @@ class TupeloRPCInterface(object):
         player.game = game
         return game_id
 
-    def player_quit(self, player_id):
-        """
-        Player quits.
-        """
-        # leave the game. Does not necessarily end the game.
-        player_id = int(player_id)
-        player = self._get_player(player_id)
-        game = player.game
-        if game:
-            game.player_leave(player_id)
-            player.game = None
-            # if the game was terminated we need to kill the old game instance
-            if len(game.players) == 0:
-                self.games.remove(game)
-
-        # without allow_none, XML-RPC methods must always return something
-        return True
-
     def game_get_state(self, game_id, player_id):
+        """
+        Get the state of a game for given player.
+        """
         game = self._get_game(int(game_id))
         response = {}
         response['game_state'] = rpc.rpc_encode(game.state)
@@ -270,14 +276,23 @@ class TupeloRPCInterface(object):
         return response
 
     def get_events(self, player_id):
+        """
+        Get the list of new events for given player.
+        """
         return rpc.rpc_encode(self._get_player(int(player_id)).pop_events())
 
     def game_start(self, game_id):
+        """
+        Start a game.
+        """
         game = self._get_game(int(game_id))
         game.start_game()
         return True
 
     def game_start_with_bots(self, game_id):
+        """
+        Start a game with bots.
+        """
         game_id = int(game_id)
         game = self._get_game(game_id)
         i = 1
@@ -288,6 +303,9 @@ class TupeloRPCInterface(object):
         return self.game_start(game_id)
 
     def game_play_card(self, game_id, player_id, card):
+        """
+        Play one card in given game, by given player.
+        """
         game = self._get_game(int(game_id))
         player = self._get_player(int(player_id))
         game.play_card(player, rpc.rpc_decode(Card, card))
