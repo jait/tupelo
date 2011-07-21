@@ -227,6 +227,7 @@ class TupeloRPCInterface(object):
     def game_list_all(self):
         """
         List all games on server.
+        TODO: deprecate
 
         Return a dict: game ID => list of players
         """
@@ -240,6 +241,7 @@ class TupeloRPCInterface(object):
         if state is not None:
             state = int(state)
 
+        # TODO: add game state, joinable yes/no, password?
         for game in self.games:
             if state is None or game.state.state == state:
                 response[str(game.id)] = [rpc.rpc_encode(player) for player in game.players]
