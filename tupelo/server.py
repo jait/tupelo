@@ -44,6 +44,7 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.send_header("Content-length", str(len(response)))
+
             self.end_headers()
             self.wfile.write(response)
 
@@ -229,9 +230,19 @@ class TupeloRPCInterface(object):
 
         Return a dict: game ID => list of players
         """
+        return self.game_list()
+
+    def game_list(self, state=None):
+        """
+        List all games on server that are in the given state.
+        """
         response = {}
+        if state is not None:
+            state = int(state)
+
         for game in self.games:
-            response[game.id] = [rpc.rpc_encode(player) for player in game.players]
+            if state is None or game.state.state == state:
+                response[str(game.id)] = [rpc.rpc_encode(player) for player in game.players]
 
         return response
 

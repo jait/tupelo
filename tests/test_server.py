@@ -23,7 +23,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
 
     def testGame(self):
         iface = I()
-        gamelist = iface.game_list_all()
+        gamelist = iface.game_list()
         self.assert_(isinstance(gamelist, dict))
         self.assertEqual(len(gamelist), 0)
         # register
@@ -32,7 +32,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
         # create game
         g_id = iface.game_create(p_id)
         # list
-        gamelist = iface.game_list_all()
+        gamelist = iface.game_list()
         self.assert_(gamelist.has_key(g_id))
         players = gamelist[g_id]
         self.assert_(isinstance(players, list))
@@ -43,7 +43,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
         ret = iface.player_quit(p_id)
         self.assertEqual(ret, True)
         # after the only player leaves, the game should get deleted
-        gamelist = iface.game_list_all()
+        gamelist = iface.game_list()
         self.assertFalse(gamelist.has_key(g_id))
 
     def testFullGame(self):
@@ -64,7 +64,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
         ret = iface.game_enter(g_id, p_ids[3])
         self.assertEqual(ret, g_id)
 
-        gamelist = iface.game_list_all()
+        gamelist = iface.game_list()
         self.assert_(gamelist.has_key(g_id))
         players = gamelist[g_id]
         self.assertEqual(len(players), len(p_ids))
