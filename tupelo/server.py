@@ -224,15 +224,6 @@ class TupeloRPCInterface(object):
         # without allow_none, XML-RPC methods must always return something
         return True
 
-    def game_list_all(self):
-        """
-        List all games on server.
-        TODO: deprecate
-
-        Return a dict: game ID => list of players
-        """
-        return self.game_list()
-
     def game_list(self, state=None):
         """
         List all games on server that are in the given state.
