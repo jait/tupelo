@@ -34,11 +34,14 @@ class TestTupeloRPCInterface(unittest.TestCase):
         # list
         gamelist = iface.game_list()
         self.assert_(gamelist.has_key(str(g_id)))
-        players = gamelist[str(g_id)]
-        self.assert_(isinstance(players, list))
+        players_raw = gamelist[str(g_id)]
+        self.assert_(isinstance(players_raw, list))
         # decode
-        players = [rpc.rpc_decode(Player, pl) for pl in players]
+        players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
         self.assert_(p_id in [pl.id for pl in players])
+        # get_info
+        info = iface.game_get_info(g_id)
+        self.assert_(info == players_raw)
         # leave
         ret = iface.player_quit(p_id)
         self.assertEqual(ret, True)

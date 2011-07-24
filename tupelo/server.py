@@ -24,6 +24,14 @@ except:
 DEFAULT_PORT = 8052
 
 
+def _game_get_rpc_info(game):
+    """
+    Get RPC info for a GameController instance.
+    TODO: does not belong here.
+    """
+    return [rpc.rpc_encode(player) for player in game.players]
+
+
 class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
     """
     Custom request handler class to support ajax/json RPC for GET requests and XML-RPC for POST.
@@ -235,7 +243,7 @@ class TupeloRPCInterface(object):
         # TODO: add game state, joinable yes/no, password?
         for game in self.games:
             if state is None or game.state.state == state:
-                response[str(game.id)] = [rpc.rpc_encode(player) for player in game.players]
+                response[str(game.id)] = _game_get_rpc_info(game)
 
         return response
 
@@ -278,6 +286,13 @@ class TupeloRPCInterface(object):
         response['game_state'] = rpc.rpc_encode(game.state)
         response['hand'] = rpc.rpc_encode(self._get_player(int(player_id)).hand)
         return response
+
+    def game_get_info(self, game_id):
+        """
+        Get the (static) information of a game.
+        """
+        game = self._get_game(int(game_id))
+        return _game_get_rpc_info(game)
 
     def get_events(self, player_id):
         """
