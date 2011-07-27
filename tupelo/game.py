@@ -38,7 +38,7 @@ class GameController(object):
         # TODO: with this logic we might get players with colliding IDs
         if player.id == -1:
             player.id = self.players.index(player)
-        player.team = player.id % 2
+        player.team = self.players.index(player) % 2
 
     def player_leave(self, player_id):
         """
@@ -120,7 +120,7 @@ class GameController(object):
         Get team string representation.
         """
         players = self._get_team_players(team)
-        return '%d (%s and %s)' % (team + 1, players[0].player_name, players[1].player_name)
+        return '%d (%s)' % (team + 1, ', '.join([pl.player_name for pl in players]))
 
     def _send_msg(self, msg):
         """
