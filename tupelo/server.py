@@ -3,7 +3,7 @@
 
 import players
 import rpc
-from common import Card, GameError, ProtocolError, traced
+from common import Card, GameError, RuleError, ProtocolError, traced
 from game import GameController
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent
 import sys
@@ -44,6 +44,20 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
         except ProtocolError, err:
             self.report_404()
             return
+        except (GameError, RuleError), err:
+            traceback.print_exception(*sys.exc_info())
+            self.send_response(403) # forbidden
+            response_obj = {'code': err.rpc_code,
+                'message': str(err)}
+            response = json.dumps(response_obj)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Content-length", str(len(response)))
+            self.end_headers()
+
+            self.wfile.write(response)
+            # shut down the connection
+            self.wfile.flush()
+            self.connection.shutdown(1)
         except Exception, err:
             traceback.print_exception(*sys.exc_info())
             self.send_response(500)
