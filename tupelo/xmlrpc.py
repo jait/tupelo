@@ -6,7 +6,7 @@ import xmlrpclib
 import players
 import rpc
 from common import GameState, CardSet, GameError, RuleError, ProtocolError
-from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent
+from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 
 def error2fault(fn):
     """
@@ -64,6 +64,8 @@ class XMLRPCCliPlayer(players.CliPlayer):
             state = self.controller.get_state(self.id)
             self.hand = state['hand']
             self.game_state.update(state['game_state'])
+        elif isinstance(event, StateChangedEvent):
+            self.game_state.update(event.game_state)
         else:
             print "unknown event: %s" % event
 
