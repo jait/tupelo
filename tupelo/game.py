@@ -86,11 +86,19 @@ class GameController(object):
         self.state.next_in_turn(thenext)
         self.state.turn_id = self._get_player_in_turn(self.state.turn).id
 
+    def _set_state(self, new_state):
+        """
+        Change the game state.
+        """
+        self.state.state = new_state
+        for player in self.players:
+            player.state_changed(self.state)
+
     def _stop_players(self):
         """
         Stop all running players.
         """
-        self.state.state = GameState.STOPPED
+        self._set_state(GameState.STOPPED)
         for player in self.players:
             if player:
                 player.act(self, self.state)
@@ -150,6 +158,9 @@ class GameController(object):
         self.shutdown()
 
     def _signal_act(self):
+        """
+        Tell the player who is in turn to act.
+        """
         self._get_player_in_turn(self.state.turn).act(self, self.state)
 
     def _start_new_hand(self):
@@ -176,10 +187,10 @@ class GameController(object):
         # voting 
         self.state.mode = NOLO
         self.state.rami_chosen_by = None
-        self.state.state = GameState.VOTING
+        self._set_state(GameState.VOTING)
 
         # uncomment following to skip voting
-        #self.state.state = GameState.ONGOING
+        #self._set_state(GameState.ONGOING)
         # start the game
         self._next_in_turn(self.state.dealer + 1)
         self._signal_act()
@@ -297,7 +308,7 @@ class GameController(object):
         self._send_msg('Game on, %s begins!' % self._get_player_in_turn(self.state.turn))
 
         self.state.table.clear()
-        self.state.state = GameState.ONGOING
+        self._set_state(GameState.ONGOING)
             
     def play_card(self, player, card):
         """

@@ -59,6 +59,12 @@ class Player(rpc.RPCSerializable):
         """
         pass
 
+    def state_changed(self, game_state):
+        """
+        Signal that the game state has changed, e.g. from VOTING to ONGOING.
+        """
+        pass
+
     def vote(self):
         """
         Vote for rami or nolo.

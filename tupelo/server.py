@@ -5,7 +5,7 @@ import players
 import rpc
 from common import Card, GameError, RuleError, ProtocolError, traced
 from game import GameController
-from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent
+from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 import sys
 import copy
 import Queue
@@ -365,6 +365,9 @@ class RPCProxyPlayer(players.ThreadedPlayer):
 
     def trick_played(self, player, game_state):
         self.send_event(TrickPlayedEvent(player, copy.deepcopy(game_state)))
+
+    def state_changed(self, game_state):
+        self.send_event(StateChangedEvent(copy.deepcopy(game_state)))
 
     def send_message(self, sender, msg):
         self.send_event(MessageEvent(sender, msg))
