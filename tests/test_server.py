@@ -19,7 +19,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
         iface = I()
         encoded = self._encoded_player()
         p_id = iface.player_register(encoded)
-        self.assert_(isinstance(p_id, int))
+        self.assert_(isinstance(p_id, basestring))
 
     def testGame(self):
         iface = I()

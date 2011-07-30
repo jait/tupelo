@@ -3,7 +3,7 @@
 
 import players
 import rpc
-from common import Card, GameError, RuleError, ProtocolError, traced
+from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid
 from game import GameController
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 import sys
@@ -176,7 +176,15 @@ class TupeloRPCInterface(object):
             if plr.id == player_id:
                 return plr
 
-        raise GameError('Player %d does not exist' % player_id)
+        raise GameError('Player (ID %s) does not exist' % player_id)
+
+    def _register_player(self, player):
+        """
+        Register a new player to the server (internal function).
+        """
+        player.id = short_uuid()
+        self.players.append(player)
+        return player.id
 
     def _get_game(self, game_id):
         """
@@ -224,16 +232,13 @@ class TupeloRPCInterface(object):
         Return the player id.
         """
         player = rpc.rpc_decode(RPCProxyPlayer, player)
-        self.players.append(player)
-        player.id = self.players.index(player)
-        return player.id
+        return self._register_player(player)
 
     def player_quit(self, player_id):
         """
         Player quits.
         """
         # leave the game. Does not necessarily end the game.
-        player_id = int(player_id)
         player = self._get_player(player_id)
         game = player.game
         if game:
@@ -267,7 +272,6 @@ class TupeloRPCInterface(object):
 
         Return the game id.
         """
-        player_id = int(player_id)
         player = self._get_player(player_id)
         game = GameController()
         # TODO: slight chance of race
@@ -283,7 +287,7 @@ class TupeloRPCInterface(object):
         Return game ID
         """
         game = self._get_game(int(game_id))
-        player = self._get_player(int(player_id))
+        player = self._get_player(player_id)
         if player.game:
             raise GameError("Player is already in a game")
 
@@ -298,7 +302,7 @@ class TupeloRPCInterface(object):
         game = self._get_game(int(game_id))
         response = {}
         response['game_state'] = rpc.rpc_encode(game.state)
-        response['hand'] = rpc.rpc_encode(self._get_player(int(player_id)).hand)
+        response['hand'] = rpc.rpc_encode(self._get_player(player_id).hand)
         return response
 
     def game_get_info(self, game_id):
@@ -312,7 +316,7 @@ class TupeloRPCInterface(object):
         """
         Get the list of new events for given player.
         """
-        return rpc.rpc_encode(self._get_player(int(player_id)).pop_events())
+        return rpc.rpc_encode(self._get_player(player_id).pop_events())
 
     def game_start(self, game_id):
         """
@@ -330,7 +334,12 @@ class TupeloRPCInterface(object):
         game = self._get_game(game_id)
         i = 1
         while len(game.players) < 4:
-            game.register_player(players.DummyBotPlayer('Robotti %d' % i))
+            plr = players.DummyBotPlayer('Robotti %d' % i)
+            # register to server first to get a non-colliding ID
+            # TODO: how to remove the bot players from server when the game ends?
+            self._register_player(plr)
+            print "plr is", plr
+            game.register_player(plr)
             i += 1
 
         return self.game_start(game_id)
@@ -340,7 +349,7 @@ class TupeloRPCInterface(object):
         Play one card in given game, by given player.
         """
         game = self._get_game(int(game_id))
-        player = self._get_player(int(player_id))
+        player = self._get_player(player_id)
         game.play_card(player, rpc.rpc_decode(Card, card))
         return True
 

@@ -35,9 +35,9 @@ class GameController(object):
             raise GameError('Already 4 players registered')
 
         self.players.append(player)
-        # TODO: with this logic we might get players with colliding IDs
-        if player.id == -1:
-            player.id = self.players.index(player)
+        # TODO: should we generate UUIDs instead?
+        if player.id == None:
+            player.id = str(self.players.index(player))
         player.team = self.players.index(player) % 2
 
     def player_leave(self, player_id):
