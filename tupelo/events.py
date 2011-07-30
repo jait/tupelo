@@ -36,6 +36,7 @@ class CardPlayedEvent(Event):
         self.card = card
         self.game_state = game_state
 
+
 class MessageEvent(Event):
     """
     A message.
@@ -65,6 +66,17 @@ class TurnEvent(Event):
     It is the player's turn to do something.
     """
     type = 4
+    rpc_attrs = Event.rpc_attrs + ('game_state:GameState',)
+
+    def __init__(self, game_state=None):
+        self.game_state = game_state
+
+
+class StateChangedEvent(Event):
+    """
+    Game state has changed.
+    """
+    type = 5
     rpc_attrs = Event.rpc_attrs + ('game_state:GameState',)
 
     def __init__(self, game_state=None):

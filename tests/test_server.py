@@ -19,11 +19,11 @@ class TestTupeloRPCInterface(unittest.TestCase):
         iface = I()
         encoded = self._encoded_player()
         p_id = iface.player_register(encoded)
-        self.assert_(isinstance(p_id, int))
+        self.assert_(isinstance(p_id, basestring))
 
     def testGame(self):
         iface = I()
-        gamelist = iface.game_list_all()
+        gamelist = iface.game_list()
         self.assert_(isinstance(gamelist, dict))
         self.assertEqual(len(gamelist), 0)
         # register
@@ -32,18 +32,21 @@ class TestTupeloRPCInterface(unittest.TestCase):
         # create game
         g_id = iface.game_create(p_id)
         # list
-        gamelist = iface.game_list_all()
-        self.assert_(gamelist.has_key(g_id))
-        players = gamelist[g_id]
-        self.assert_(isinstance(players, list))
+        gamelist = iface.game_list()
+        self.assert_(gamelist.has_key(str(g_id)))
+        players_raw = gamelist[str(g_id)]
+        self.assert_(isinstance(players_raw, list))
         # decode
-        players = [rpc.rpc_decode(Player, pl) for pl in players]
+        players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
         self.assert_(p_id in [pl.id for pl in players])
+        # get_info
+        info = iface.game_get_info(g_id)
+        self.assert_(info == players_raw)
         # leave
         ret = iface.player_quit(p_id)
         self.assertEqual(ret, True)
         # after the only player leaves, the game should get deleted
-        gamelist = iface.game_list_all()
+        gamelist = iface.game_list()
         self.assertFalse(gamelist.has_key(g_id))
 
     def testFullGame(self):
@@ -64,9 +67,9 @@ class TestTupeloRPCInterface(unittest.TestCase):
         ret = iface.game_enter(g_id, p_ids[3])
         self.assertEqual(ret, g_id)
 
-        gamelist = iface.game_list_all()
-        self.assert_(gamelist.has_key(g_id))
-        players = gamelist[g_id]
+        gamelist = iface.game_list()
+        self.assert_(gamelist.has_key(str(g_id)))
+        players = gamelist[str(g_id)]
         self.assertEqual(len(players), len(p_ids))
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players]

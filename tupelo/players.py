@@ -14,7 +14,7 @@ class Player(rpc.RPCSerializable):
     rpc_attrs = ('id', 'player_name', 'team')
 
     def __init__(self, name):
-        self.id = -1
+        self.id = None
         rpc.RPCSerializable.__init__(self)
         self.player_name = name
         self.hand = CardSet()
@@ -56,6 +56,12 @@ class Player(rpc.RPCSerializable):
     def trick_played(self, player, game_state):
         """
         Signal that a trick has been played. "player" had the winning card.
+        """
+        pass
+
+    def state_changed(self, game_state):
+        """
+        Signal that the game state has changed, e.g. from VOTING to ONGOING.
         """
         pass
 
@@ -120,7 +126,7 @@ class ThreadedPlayer(threading.Thread, Player):
                 try:
                     self.vote()
                 except UserQuit, error:
-                    print '%d: UserQuit:' % self.id, error
+                    print '%s: UserQuit:' % self.id, error
                     self.controller.player_quit(self.id)
                     break
                 except Exception, error:
@@ -130,7 +136,7 @@ class ThreadedPlayer(threading.Thread, Player):
                 try:
                     self.play_card()
                 except UserQuit, error:
-                    print '%d: UserQuit:' % self.id, error
+                    print '%s: UserQuit:' % self.id, error
                     self.controller.player_quit(self.id)
                     break
                 except Exception, error:
@@ -387,11 +393,11 @@ class CliPlayer(ThreadedPlayer):
         print 'Table:'
         for card in state.table:
             try:
-                plr = self.controller.get_player(card.played_by)
+                plr = '%s: ' % self.controller.get_player(card.played_by).player_name
             except:
-                plr = card.played_by
-
-            print '%s: %s' % (plr, card)
+                # showing the (random) player ID is not very intuitive
+                plr = ''
+            print '%s%s' % (plr, card)
 
         card_played = False
         while not card_played:

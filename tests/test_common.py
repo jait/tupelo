@@ -85,6 +85,12 @@ class TestCommon(unittest.TestCase):
         self.assert_(isinstance(gs2.table, gs.table.__class__))
         self.assertEqual(len(gs2.table), len(gs.table))
 
+    def testShortUUID(self):
+        suuid = common.short_uuid()
+        self.assert_(isinstance(suuid, basestring))
+        suuid2 = common.short_uuid()
+        self.assertNotEqual(suuid, suuid2)
+
 
 if __name__ == '__main__':
     unittest.main()

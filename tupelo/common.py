@@ -4,6 +4,8 @@
 import random
 import copy
 import rpc
+import uuid
+import base64
 
 # game mode
 NOLO = 0
@@ -27,6 +29,13 @@ def traced(func):
 
     return wrapper
 
+def short_uuid():
+    """
+    Generate a short, random unique ID.
+
+    Returns a string (base64 encoded UUID).
+    """
+    return base64.b64encode(uuid.uuid4().get_bytes()).replace('=', '')
 
 class GameError(Exception):
     """
