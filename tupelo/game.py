@@ -38,6 +38,7 @@ class GameController(object):
         # TODO: should we generate UUIDs instead?
         if player.id == None:
             player.id = str(self.players.index(player))
+
         player.team = self.players.index(player) % 2
 
     def player_leave(self, player_id):

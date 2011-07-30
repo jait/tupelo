@@ -334,12 +334,8 @@ class TupeloRPCInterface(object):
         game = self._get_game(game_id)
         i = 1
         while len(game.players) < 4:
-            plr = players.DummyBotPlayer('Robotti %d' % i)
-            # register to server first to get a non-colliding ID
-            # TODO: how to remove the bot players from server when the game ends?
-            self._register_player(plr)
-            print "plr is", plr
-            game.register_player(plr)
+            # register bots only to game so that we don't need to unregister them
+            game.register_player(players.DummyBotPlayer('Robotti %d' % i))
             i += 1
 
         return self.game_start(game_id)
