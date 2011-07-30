@@ -393,12 +393,11 @@ class CliPlayer(ThreadedPlayer):
         print 'Table:'
         for card in state.table:
             try:
-                plr = self.controller.get_player(card.played_by)
+                plr = '%s: ' % self.controller.get_player(card.played_by).player_name
             except:
-                # TODO: showing the random player ID is not very intuitive
-                plr = card.played_by
-
-            print '%s: %s' % (plr, card)
+                # showing the (random) player ID is not very intuitive
+                plr = ''
+            print '%s%s' % (plr, card)
 
         card_played = False
         while not card_played:
