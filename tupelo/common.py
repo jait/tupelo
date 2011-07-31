@@ -35,7 +35,7 @@ def short_uuid():
 
     Returns a string (base64 encoded UUID).
     """
-    return base64.b64encode(uuid.uuid4().get_bytes()).replace('=', '')
+    return base64.urlsafe_b64encode(uuid.uuid4().get_bytes()).replace('=', '')
 
 class GameError(Exception):
     """
