@@ -271,8 +271,10 @@ class TupeloRPCInterface(object):
             for k in kwparams.keys():
                 if k not in self.methods[method]:
                     del kwparams[k]
-
-            return func(**kwparams)
+            try:
+                return func(**kwparams)
+            except TypeError, err:
+                raise ProtocolError(str(err))
 
         raise ProtocolError('Method "%s" is not supported' % method)
 
