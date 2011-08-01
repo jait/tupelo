@@ -104,22 +104,22 @@ class XMLRPCProxyController(object):
 
     @fault2error
     def play_card(self, player, card):
-        self.server.game.play_card(self.game_id, player.id, rpc.rpc_encode(card))
+        self.server.game.play_card(self.akey, self.game_id, rpc.rpc_encode(card))
 
     @fault2error
     def get_events(self, player_id):
-        return rpc.rpc_decode(EventList, self.server.get_events(player_id))
+        return rpc.rpc_decode(EventList, self.server.get_events(self.akey))
 
     @fault2error
     def get_state(self, player_id):
-        state = self.server.game.get_state(self.game_id, player_id)
+        state = self.server.game.get_state(self.akey, self.game_id)
         state['game_state'] = rpc.rpc_decode(GameState, state['game_state'])
         state['hand'] = rpc.rpc_decode(CardSet, state['hand'])
         return state
 
     @fault2error
     def player_quit(self, player_id):
-        self.server.player.quit(player_id)
+        self.server.player.quit(self.akey)
 
     @fault2error
     def register_player(self, player):
@@ -130,5 +130,10 @@ class XMLRPCProxyController(object):
 
     @fault2error
     def start_game_with_bots(self):
-        return self.server.game.start_with_bots(self.game_id)
+        return self.server.game.start_with_bots(self.akey, self.game_id)
+
+    @fault2error
+    def create_game(self):
+        self.game_id = self.server.game.create(self.akey)
+        return self.game_id
 

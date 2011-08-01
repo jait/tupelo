@@ -285,15 +285,16 @@ class TupeloRPCInterface(object):
         player = rpc.rpc_decode(RPCProxyPlayer, player)
         return self._register_player(player)
 
-    def player_quit(self, player_id):
+    @authenticated
+    def player_quit(self):
         """
         Player quits.
         """
         # leave the game. Does not necessarily end the game.
-        player = self._get_player(player_id)
+        player = self.authenticated_player
         game = player.game
         if game:
-            game.player_leave(player_id)
+            game.player_leave(player.id)
             player.game = None
             # if the game was terminated we need to kill the old game instance
             if len(game.players) == 0:
@@ -317,28 +318,30 @@ class TupeloRPCInterface(object):
 
         return response
 
-    def game_create(self, player_id):
+    @authenticated
+    def game_create(self):
         """
         Create a new game and enter it.
 
         Return the game id.
         """
-        player = self._get_player(player_id)
+        player = self.authenticated_player
         game = GameController()
         # TODO: slight chance of race
         self.games.append(game)
         game.id = self.games.index(game)
-        self.game_enter(game.id, player.id)
+        self.game_enter(self.authenticated_player.akey, game.id)
         return game.id
 
-    def game_enter(self, game_id, player_id):
+    @authenticated
+    def game_enter(self, game_id):
         """
         Register a new player to the game.
 
         Return game ID
         """
         game = self._get_game(int(game_id))
-        player = self._get_player(player_id)
+        player = self.authenticated_player
         if player.game:
             raise GameError("Player is already in a game")
 
@@ -346,14 +349,15 @@ class TupeloRPCInterface(object):
         player.game = game
         return game_id
 
-    def game_get_state(self, game_id, player_id):
+    @authenticated
+    def game_get_state(self, game_id):
         """
         Get the state of a game for given player.
         """
         game = self._get_game(int(game_id))
         response = {}
         response['game_state'] = rpc.rpc_encode(game.state)
-        response['hand'] = rpc.rpc_encode(self._get_player(player_id).hand)
+        response['hand'] = rpc.rpc_encode(self.authenticated_player.hand)
         return response
 
     def game_get_info(self, game_id):
@@ -363,12 +367,14 @@ class TupeloRPCInterface(object):
         game = self._get_game(int(game_id))
         return _game_get_rpc_info(game)
 
-    def get_events(self, player_id):
+    @authenticated
+    def get_events(self):
         """
         Get the list of new events for given player.
         """
-        return rpc.rpc_encode(self._get_player(player_id).pop_events())
+        return rpc.rpc_encode(self.authenticated_player.pop_events())
 
+    @authenticated
     def game_start(self, game_id):
         """
         Start a game.
@@ -377,6 +383,7 @@ class TupeloRPCInterface(object):
         game.start_game()
         return True
 
+    @authenticated
     def game_start_with_bots(self, game_id):
         """
         Start a game with bots.
@@ -389,14 +396,15 @@ class TupeloRPCInterface(object):
             game.register_player(players.DummyBotPlayer('Robotti %d' % i))
             i += 1
 
-        return self.game_start(game_id)
+        return self.game_start(self.authenticated_player.akey, game_id)
 
-    def game_play_card(self, game_id, player_id, card):
+    @authenticated
+    def game_play_card(self, game_id, card):
         """
         Play one card in given game, by given player.
         """
         game = self._get_game(int(game_id))
-        player = self._get_player(player_id)
+        player = self.authenticated_player
         game.play_card(player, rpc.rpc_decode(Card, card))
         return True
 
