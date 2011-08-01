@@ -9,14 +9,14 @@ from common import GameState, CardSet, GameError, RuleError, ProtocolError, simp
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 
 @simple_decorator
-def error2fault(fn):
+def error2fault(func):
     """
     Catch known exceptions and translate them to 
     XML-RPC faults.
     """
     def catcher(*args):
         try:
-            return fn(*args)
+            return func(*args)
         except GameError, error:
             raise xmlrpclib.Fault(GameError.rpc_code, str(error))
         except RuleError, error:
@@ -26,14 +26,14 @@ def error2fault(fn):
     return catcher
 
 @simple_decorator
-def fault2error(fn):
+def fault2error(func):
     """
     Catch known XML-RPC faults and translate them to 
     custom exceptions.
     """
     def catcher(*args):
         try:
-            return fn(*args)
+            return func(*args)
         except xmlrpclib.Fault, error:
             error_classes = (GameError, RuleError, ProtocolError)
             for klass in error_classes:

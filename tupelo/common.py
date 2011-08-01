@@ -23,12 +23,12 @@ def simple_decorator(decorator):
     your decorator and it will automatically preserve the
     docstring and function attributes of functions to which
     it is applied."""
-    def new_decorator(f):
-        g = decorator(f)
-        g.__name__ = f.__name__
-        g.__doc__ = f.__doc__
-        g.__dict__.update(f.__dict__)
-        return g
+    def new_decorator(func):
+        decf = decorator(func)
+        decf.__name__ = func.__name__
+        decf.__doc__ = func.__doc__
+        decf.__dict__.update(func.__dict__)
+        return decf
     # Now a few lines needed to make simple_decorator itself
     # be a well-behaved decorator.
     new_decorator.__name__ = decorator.__name__
@@ -45,10 +45,6 @@ def traced(func):
         print "DEBUG: entering %s()" % func.__name__
         retval = func(*args, **kwargs)
         return retval
-
-    wrapper.__name__ = func.__name__
-    wrapper.__dict__ = func.__dict__
-    wrapper.__doc__ = func.__doc__
 
     return wrapper
 

@@ -128,8 +128,8 @@ class GameController(object):
         """
         Get team string representation.
         """
-        players = self._get_team_players(team)
-        return '%d (%s)' % (team + 1, ', '.join([pl.player_name for pl in players]))
+        plrs = self._get_team_players(team)
+        return '%d (%s)' % (team + 1, ', '.join([pl.player_name for pl in plrs]))
 
     def _send_msg(self, msg):
         """
