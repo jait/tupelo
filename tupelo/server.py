@@ -3,7 +3,7 @@
 
 import players
 import rpc
-from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid
+from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator
 from game import GameController
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 import sys
@@ -23,6 +23,27 @@ except:
 
 DEFAULT_PORT = 8052
 
+
+@simple_decorator
+def authenticated(fn):
+    """
+    Method decorator to verify that the client sent a valid authentication
+    key.
+    """
+    def wrapper(self, akey, *args, **kwargs):
+        self._ensure_auth(akey)
+        try:
+            retval = fn(self, *args, **kwargs)
+        finally:
+            self._clear_auth()
+
+        return retval
+
+    # copy argspec from wrapped function
+    wrapper.argspec = inspect.getargspec(fn)
+    # and add our extra arg
+    wrapper.argspec.args.insert(0, 'akey')
+    return wrapper
 
 def _game_get_rpc_info(game):
     """
@@ -152,6 +173,7 @@ class TupeloRPCInterface(object):
         self.players = []
         self.games = []
         self.methods = self._get_methods()
+        self.authenticated_player = None
 
     def _get_methods(self):
         """
@@ -164,7 +186,15 @@ class TupeloRPCInterface(object):
         for mname in method_names:
             func = getattr(self, mname)
             if callable(func):
-                methods[mname] = inspect.getargspec(func)[0]
+                # check if it is a decorated method
+                if hasattr(func, 'argspec'):
+                    methods[mname] = func.argspec[0]
+                else:
+                    methods[mname] = inspect.getargspec(func)[0]
+
+                # remove 'self' from signature
+                if 'self' in methods[mname]:
+                    methods[mname].remove('self')
 
         return methods
 
@@ -182,9 +212,30 @@ class TupeloRPCInterface(object):
         """
         Register a new player to the server (internal function).
         """
+        # generate a (public) ID and (private) access token
         player.id = short_uuid()
+        player.akey = short_uuid()
         self.players.append(player)
-        return player.id
+        return {'player_id': player.id, 'akey': player.akey}
+
+    def _ensure_auth(self, akey):
+        """
+        Check the given authentication key and set self.authenticated_player.
+
+        Raises GameError if akey is not valid.
+        """
+        for plr in self.players:
+            if plr.akey == akey:
+                self.authenticated_player = plr
+                return self.authenticated_player
+
+        raise GameError("Invalid authentication key")
+
+    def _clear_auth(self):
+        """
+        Clear info about the authenticated player.
+        """
+        self.authenticated_player = None
 
     def _get_game(self, game_id):
         """
@@ -220,8 +271,10 @@ class TupeloRPCInterface(object):
             for k in kwparams.keys():
                 if k not in self.methods[method]:
                     del kwparams[k]
-
-            return func(**kwparams)
+            try:
+                return func(**kwparams)
+            except TypeError, err:
+                raise ProtocolError(str(err))
 
         raise ProtocolError('Method "%s" is not supported' % method)
 
@@ -234,15 +287,16 @@ class TupeloRPCInterface(object):
         player = rpc.rpc_decode(RPCProxyPlayer, player)
         return self._register_player(player)
 
-    def player_quit(self, player_id):
+    @authenticated
+    def player_quit(self):
         """
         Player quits.
         """
         # leave the game. Does not necessarily end the game.
-        player = self._get_player(player_id)
+        player = self.authenticated_player
         game = player.game
         if game:
-            game.player_leave(player_id)
+            game.player_leave(player.id)
             player.game = None
             # if the game was terminated we need to kill the old game instance
             if len(game.players) == 0:
@@ -266,28 +320,30 @@ class TupeloRPCInterface(object):
 
         return response
 
-    def game_create(self, player_id):
+    @authenticated
+    def game_create(self):
         """
         Create a new game and enter it.
 
         Return the game id.
         """
-        player = self._get_player(player_id)
+        player = self.authenticated_player
         game = GameController()
         # TODO: slight chance of race
         self.games.append(game)
         game.id = self.games.index(game)
-        self.game_enter(game.id, player.id)
+        self.game_enter(self.authenticated_player.akey, game.id)
         return game.id
 
-    def game_enter(self, game_id, player_id):
+    @authenticated
+    def game_enter(self, game_id):
         """
         Register a new player to the game.
 
         Return game ID
         """
         game = self._get_game(int(game_id))
-        player = self._get_player(player_id)
+        player = self.authenticated_player
         if player.game:
             raise GameError("Player is already in a game")
 
@@ -295,14 +351,15 @@ class TupeloRPCInterface(object):
         player.game = game
         return game_id
 
-    def game_get_state(self, game_id, player_id):
+    @authenticated
+    def game_get_state(self, game_id):
         """
         Get the state of a game for given player.
         """
         game = self._get_game(int(game_id))
         response = {}
         response['game_state'] = rpc.rpc_encode(game.state)
-        response['hand'] = rpc.rpc_encode(self._get_player(player_id).hand)
+        response['hand'] = rpc.rpc_encode(self.authenticated_player.hand)
         return response
 
     def game_get_info(self, game_id):
@@ -312,12 +369,14 @@ class TupeloRPCInterface(object):
         game = self._get_game(int(game_id))
         return _game_get_rpc_info(game)
 
-    def get_events(self, player_id):
+    @authenticated
+    def get_events(self):
         """
         Get the list of new events for given player.
         """
-        return rpc.rpc_encode(self._get_player(player_id).pop_events())
+        return rpc.rpc_encode(self.authenticated_player.pop_events())
 
+    @authenticated
     def game_start(self, game_id):
         """
         Start a game.
@@ -326,6 +385,7 @@ class TupeloRPCInterface(object):
         game.start_game()
         return True
 
+    @authenticated
     def game_start_with_bots(self, game_id):
         """
         Start a game with bots.
@@ -338,14 +398,15 @@ class TupeloRPCInterface(object):
             game.register_player(players.DummyBotPlayer('Robotti %d' % i))
             i += 1
 
-        return self.game_start(game_id)
+        return self.game_start(self.authenticated_player.akey, game_id)
 
-    def game_play_card(self, game_id, player_id, card):
+    @authenticated
+    def game_play_card(self, game_id, card):
         """
         Play one card in given game, by given player.
         """
         game = self._get_game(int(game_id))
-        player = self._get_player(player_id)
+        player = self.authenticated_player
         game.play_card(player, rpc.rpc_decode(Card, card))
         return True
 

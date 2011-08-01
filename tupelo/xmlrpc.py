@@ -5,9 +5,10 @@ import time
 import xmlrpclib
 import players
 import rpc
-from common import GameState, CardSet, GameError, RuleError, ProtocolError
+from common import GameState, CardSet, GameError, RuleError, ProtocolError, simple_decorator
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 
+@simple_decorator
 def error2fault(fn):
     """
     Catch known exceptions and translate them to 
@@ -24,6 +25,7 @@ def error2fault(fn):
             raise xmlrpclib.Fault(ProtocolError.rpc_code, str(error))
     return catcher
 
+@simple_decorator
 def fault2error(fn):
     """
     Catch known XML-RPC faults and translate them to 
@@ -98,32 +100,40 @@ class XMLRPCProxyController(object):
 
         self.server = xmlrpclib.ServerProxy(server_uri)
         self.game_id = None
+        self.akey = None
 
     @fault2error
     def play_card(self, player, card):
-        self.server.game.play_card(self.game_id, player.id, rpc.rpc_encode(card))
+        self.server.game.play_card(self.akey, self.game_id, rpc.rpc_encode(card))
 
     @fault2error
     def get_events(self, player_id):
-        return rpc.rpc_decode(EventList, self.server.get_events(player_id))
+        return rpc.rpc_decode(EventList, self.server.get_events(self.akey))
 
     @fault2error
     def get_state(self, player_id):
-        state = self.server.game.get_state(self.game_id, player_id)
+        state = self.server.game.get_state(self.akey, self.game_id)
         state['game_state'] = rpc.rpc_decode(GameState, state['game_state'])
         state['hand'] = rpc.rpc_decode(CardSet, state['hand'])
         return state
 
     @fault2error
     def player_quit(self, player_id):
-        self.server.player.quit(player_id)
+        self.server.player.quit(self.akey)
 
     @fault2error
     def register_player(self, player):
         player.controller = self
-        player.id = self.server.player.register(rpc.rpc_encode(player))
+        plr_data = self.server.player.register(rpc.rpc_encode(player))
+        player.id = plr_data['player_id']
+        self.akey = plr_data['akey']
 
     @fault2error
     def start_game_with_bots(self):
-        return self.server.game.start_with_bots(self.game_id)
+        return self.server.game.start_with_bots(self.akey, self.game_id)
+
+    @fault2error
+    def create_game(self):
+        self.game_id = self.server.game.create(self.akey)
+        return self.game_id
 

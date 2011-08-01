@@ -18,8 +18,12 @@ class TestTupeloRPCInterface(unittest.TestCase):
     def testRegisterPlayer(self):
         iface = I()
         encoded = self._encoded_player()
-        p_id = iface.player_register(encoded)
-        self.assert_(isinstance(p_id, basestring))
+        p_data = iface.player_register(encoded)
+        self.assert_(isinstance(p_data['player_id'], basestring))
+        self.assert_(isinstance(p_data['akey'], basestring))
+        plr = iface._ensure_auth(p_data['akey'])
+        self.assertEqual(plr.id, p_data['player_id'])
+        iface._clear_auth()
 
     def testGame(self):
         iface = I()
@@ -28,9 +32,9 @@ class TestTupeloRPCInterface(unittest.TestCase):
         self.assertEqual(len(gamelist), 0)
         # register
         p_encoded = self._encoded_player()
-        p_id = iface.player_register(p_encoded)
+        p_data = iface.player_register(p_encoded)
         # create game
-        g_id = iface.game_create(p_id)
+        g_id = iface.game_create(p_data['akey'])
         # list
         gamelist = iface.game_list()
         self.assert_(gamelist.has_key(str(g_id)))
@@ -38,12 +42,12 @@ class TestTupeloRPCInterface(unittest.TestCase):
         self.assert_(isinstance(players_raw, list))
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
-        self.assert_(p_id in [pl.id for pl in players])
+        self.assert_(p_data['player_id'] in [pl.id for pl in players])
         # get_info
         info = iface.game_get_info(g_id)
         self.assert_(info == players_raw)
         # leave
-        ret = iface.player_quit(p_id)
+        ret = iface.player_quit(p_data['akey'])
         self.assertEqual(ret, True)
         # after the only player leaves, the game should get deleted
         gamelist = iface.game_list()
@@ -55,28 +59,28 @@ class TestTupeloRPCInterface(unittest.TestCase):
         for i in range(1, 5):
             plrs.append(self._encoded_player(str(i)))
 
-        p_ids = []
+        p_datas = []
         for p in plrs:
-            p_ids.append(iface.player_register(p))
+            p_datas.append(iface.player_register(p))
 
-        g_id = iface.game_create(p_ids[0])
-        ret = iface.game_enter(g_id, p_ids[1])
+        g_id = iface.game_create(p_datas[0]['akey'])
+        ret = iface.game_enter(p_datas[1]['akey'], g_id)
         self.assertEqual(ret, g_id)
-        ret = iface.game_enter(g_id, p_ids[2])
+        ret = iface.game_enter(p_datas[2]['akey'], g_id)
         self.assertEqual(ret, g_id)
-        ret = iface.game_enter(g_id, p_ids[3])
+        ret = iface.game_enter(p_datas[3]['akey'], g_id)
         self.assertEqual(ret, g_id)
 
         gamelist = iface.game_list()
         self.assert_(gamelist.has_key(str(g_id)))
         players = gamelist[str(g_id)]
-        self.assertEqual(len(players), len(p_ids))
+        self.assertEqual(len(players), len(p_datas))
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players]
-        for p_id in p_ids:
-            self.assert_(p_id in [pl.id for pl in players])
+        for p_data in p_datas:
+            self.assert_(p_data['player_id'] in [pl.id for pl in players])
 
-        state = iface.game_get_state(g_id, p_ids[0])
+        state = iface.game_get_state(p_datas[0]['akey'], g_id)
         self.assert_(state.has_key('game_state'))
         self.assertEqual(state['game_state']['state'], 0)
 
@@ -86,12 +90,12 @@ class TestTupeloRPCInterface(unittest.TestCase):
             ret = iface.game_start(g_id)
             self.assertEqual(ret, True)
 
-            state = iface.game_get_state(g_id, p_ids[0])
+            state = iface.game_get_state(p_datas[0]['akey'], g_id)
             self.assert_(state.has_key('game_state'))
             self.assertEqual(state['game_state']['state'], 1)
             self.assert_(state.has_key('hand'))
 
-            ret = iface.player_quit(p_ids[0])
+            ret = iface.player_quit(p_datas[0]['akey'])
             self.assertEqual(ret, True)
         finally:
             for game in iface.games:
