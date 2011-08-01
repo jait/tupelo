@@ -116,6 +116,7 @@ class TupeloApp(QWidget):
         game.register_player(self.player)
 
         if remote:
+            game.create_game()
             self.player.start()
             game.start_game_with_bots()
         else:
