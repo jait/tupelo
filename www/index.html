@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<style>
+.highlight {
+	background-color: #CFF;
+}
+.highlight_player {
+	background-color: #CFF;
+	-webkit-border-radius: 12px;
+	-moz-border-radius: 12px;
+	border-radius: 12px;
+	padding: 2px 5px 2px 5px;
+	border: 1px solid #0CF;
+}
+.bold {
+	font-weight: bold;
+}
+.diamonds {
+	color: red;
+}
+.hearts{
+	color: red;
+}
+.clubs {
+	color: black;
+}
+.spades {
+	color: black;
+}
+.card {
+	margin: 0.4em;
+	padding: 10px 3px 10px 3px;
+	border: 1px solid black;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+}
+.card_selectable:hover {
+	background-color: #DFF;
+}
+a.selectable {
+	text-decoration: none;
+}
+#game_status {
+	margin-bottom: 1em;
+}
+.status {
+	margin-right: 10px;
+	padding: 5px;
+}
+#game_area {
+	float: left;
+	margin-bottom: 2em;
+}
+#game_area td {
+	height: 3em;
+	min-width: 6em;
+}
+.table {
+	margin-top: 1.5em;
+	margin-bottom: 1.5em;
+	height: 1.5em;
+}
+#table_0 {
+	text-align: center;
+}
+#table_0 .player_name {
+	font-weight: bold;
+}
+#table_2 {
+	text-align: center;
+}
+#events {
+        /*
+	right: 0;
+	*/
+	float: right;
+	margin-bottom: 2em;
+}
+#events h4 {
+	margin-top: 0;
+}
+#hand {
+	clear: left;
+	margin-top: 2em;
+}
+</style>
+<script type="text/javascript" src="jquery-1.6.2.js"></script>
+<script type="text/javascript" src="tupelo.js"></script>
+<script type="text/javascript" src="tupelo-main.js"></script>
+<title>Tupelo</title>
+</head>
+
+<body>
+<div id="debug"></div>
+<p>
+<div id="register_form">
+<input id="register_name" type="text"/>
+<button id="register_ajax">sign on</button>
+</div>
+<div id="quit_form">
+<button id="quit_ajax">sign off</button>
+</div>
+</p>
+<!--
+<p>
+<input id="echo" type="text"/>
+<button id="echo_ajax">echo</button>
+<p>
+result: <div id="echo_result"></div>
+</p>
+-->
+</p>
+<div id="games">
+<h3>list of games</h3>
+<div id="game_list"></div>
+<div id="game_create_form">
+<button id="game_create_ajax">create game</button>
+</div>
+</div>
+<div id="my_game">
+<p id="joined_game"></p>
+<button id="game_start">start</button>
+<button id="game_start_with_bots">start with bots</button>
+</div>
+<div id="game">
+<div id="game_status"></div>
+<div id="game_area">
+<table>
+<tbody>
+<tr><td/><td id="table_2"><div class="player_data"><div class="player_name"></div><div class="table"></div></div></td><td/></tr>
+<tr><td id="table_1"><span class="player_data"><span class="player_name"></span><span class="table"></span></span></td><td/><td id="table_3"><span class="player_data"><span class="table"></span><span class="player_name"></span></span></td></tr>
+<tr><td/><td id="table_0"><div class="player_data"><div class="table"></div><div class="player_name"></div></div></td><td/></tr>
+</tbody>
+</table>
+</div>
+<div id="events">
+<h4>log</h4>
+<textarea id="event_log" rows="10" cols="40" readonly="readonly">
+</textarea>
+</div>
+<div id="hand"></div>
+</div>
+</body>
+</html>
