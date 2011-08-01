@@ -19,13 +19,13 @@ def rpc_decode(cls, rpcobj):
     except AttributeError:
         return rpcobj
 
-def _memoize(f, cache={}):
-    def g(*args, **kwargs):
-        key = (f, tuple(args), frozenset(kwargs.items()))
+def _memoize(func, cache={}):
+    def decf(*args, **kwargs):
+        key = (func, tuple(args), frozenset(kwargs.items()))
         if key not in cache:
-            cache[key] = f(*args, **kwargs)
+            cache[key] = func(*args, **kwargs)
         return cache[key]
-    return g
+    return decf
 
 def _itersubclasses(cls, _seen=None):
     """
@@ -138,17 +138,17 @@ class RPCSerializable(object):
 
     @classmethod
     @_memoize
-    def get_class_for_type(cls, type):
-        if type is None:
+    def get_class_for_type(cls, atype):
+        if atype is None:
             return None
 
         # try first if some class has a overridden type
         for sub in _itersubclasses(RPCSerializable):
-            if hasattr(sub, 'rpc_type') and sub.rpc_type == type:
+            if hasattr(sub, 'rpc_type') and sub.rpc_type == atype:
                 return sub
         # then try with class name
         for sub in _itersubclasses(RPCSerializable):
-            if sub.__name__ == type:
+            if sub.__name__ == atype:
                 return sub
 
         return None
