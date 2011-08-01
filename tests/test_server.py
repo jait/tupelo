@@ -18,8 +18,12 @@ class TestTupeloRPCInterface(unittest.TestCase):
     def testRegisterPlayer(self):
         iface = I()
         encoded = self._encoded_player()
-        p_id = iface.player_register(encoded)
-        self.assert_(isinstance(p_id, basestring))
+        p_data = iface.player_register(encoded)
+        self.assert_(isinstance(p_data['player_id'], basestring))
+        self.assert_(isinstance(p_data['akey'], basestring))
+        plr = iface._ensure_auth(p_data['akey'])
+        self.assertEqual(plr.id, p_data['player_id'])
+        iface._clear_auth()
 
     def testGame(self):
         iface = I()
@@ -28,9 +32,9 @@ class TestTupeloRPCInterface(unittest.TestCase):
         self.assertEqual(len(gamelist), 0)
         # register
         p_encoded = self._encoded_player()
-        p_id = iface.player_register(p_encoded)
+        p_data = iface.player_register(p_encoded)
         # create game
-        g_id = iface.game_create(p_id)
+        g_id = iface.game_create(p_data['player_id'])
         # list
         gamelist = iface.game_list()
         self.assert_(gamelist.has_key(str(g_id)))
@@ -38,12 +42,12 @@ class TestTupeloRPCInterface(unittest.TestCase):
         self.assert_(isinstance(players_raw, list))
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
-        self.assert_(p_id in [pl.id for pl in players])
+        self.assert_(p_data['player_id'] in [pl.id for pl in players])
         # get_info
         info = iface.game_get_info(g_id)
         self.assert_(info == players_raw)
         # leave
-        ret = iface.player_quit(p_id)
+        ret = iface.player_quit(p_data['player_id'])
         self.assertEqual(ret, True)
         # after the only player leaves, the game should get deleted
         gamelist = iface.game_list()
@@ -57,7 +61,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
 
         p_ids = []
         for p in plrs:
-            p_ids.append(iface.player_register(p))
+            p_ids.append(iface.player_register(p)['player_id'])
 
         g_id = iface.game_create(p_ids[0])
         ret = iface.game_enter(g_id, p_ids[1])

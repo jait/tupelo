@@ -3,7 +3,7 @@
 
 import players
 import rpc
-from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid
+from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator
 from game import GameController
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 import sys
@@ -23,6 +23,27 @@ except:
 
 DEFAULT_PORT = 8052
 
+
+@simple_decorator
+def authenticated(fn):
+    """
+    Method decorator to verify that the client sent a valid authentication
+    key.
+    """
+    def wrapper(self, akey, *args, **kwargs):
+        self._ensure_auth(akey)
+        try:
+            retval = fn(self, *args, **kwargs)
+        finally:
+            self._clear_auth()
+
+        return retval
+
+    # copy argspec from wrapped function
+    wrapper.argspec = inspect.getargspec(fn)
+    # and add our extra arg
+    wrapper.argspec.args.insert(0, 'akey')
+    return wrapper
 
 def _game_get_rpc_info(game):
     """
@@ -152,6 +173,7 @@ class TupeloRPCInterface(object):
         self.players = []
         self.games = []
         self.methods = self._get_methods()
+        self.authenticated_player = None
 
     def _get_methods(self):
         """
@@ -164,7 +186,15 @@ class TupeloRPCInterface(object):
         for mname in method_names:
             func = getattr(self, mname)
             if callable(func):
-                methods[mname] = inspect.getargspec(func)[0]
+                # check if it is a decorated method
+                if hasattr(func, 'argspec'):
+                    methods[mname] = func.argspec[0]
+                else:
+                    methods[mname] = inspect.getargspec(func)[0]
+
+                # remove 'self' from signature
+                if 'self' in methods[mname]:
+                    methods[mname].remove('self')
 
         return methods
 
@@ -182,9 +212,30 @@ class TupeloRPCInterface(object):
         """
         Register a new player to the server (internal function).
         """
+        # generate a (public) ID and (private) access token
         player.id = short_uuid()
+        player.akey = short_uuid()
         self.players.append(player)
-        return player.id
+        return {'player_id': player.id, 'akey': player.akey}
+
+    def _ensure_auth(self, akey):
+        """
+        Check the given authentication key and set self.authenticated_player.
+
+        Raises GameError if akey is not valid.
+        """
+        for plr in self.players:
+            if plr.akey == akey:
+                self.authenticated_player = plr
+                return self.authenticated_player
+
+        raise GameError("Invalid authentication key")
+
+    def _clear_auth(self):
+        """
+        Clear info about the authenticated player.
+        """
+        self.authenticated_player = None
 
     def _get_game(self, game_id):
         """

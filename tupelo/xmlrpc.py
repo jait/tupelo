@@ -100,6 +100,7 @@ class XMLRPCProxyController(object):
 
         self.server = xmlrpclib.ServerProxy(server_uri)
         self.game_id = None
+        self.akey = None
 
     @fault2error
     def play_card(self, player, card):
@@ -123,7 +124,9 @@ class XMLRPCProxyController(object):
     @fault2error
     def register_player(self, player):
         player.controller = self
-        player.id = self.server.player.register(rpc.rpc_encode(player))
+        plr_data = self.server.player.register(rpc.rpc_encode(player))
+        player.id = plr_data['player_id']
+        self.akey = plr_data['akey']
 
     @fault2error
     def start_game_with_bots(self):
