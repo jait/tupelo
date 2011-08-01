@@ -5,9 +5,10 @@ import time
 import xmlrpclib
 import players
 import rpc
-from common import GameState, CardSet, GameError, RuleError, ProtocolError
+from common import GameState, CardSet, GameError, RuleError, ProtocolError, simple_decorator
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 
+@simple_decorator
 def error2fault(fn):
     """
     Catch known exceptions and translate them to 
@@ -24,6 +25,7 @@ def error2fault(fn):
             raise xmlrpclib.Fault(ProtocolError.rpc_code, str(error))
     return catcher
 
+@simple_decorator
 def fault2error(fn):
     """
     Catch known XML-RPC faults and translate them to 
