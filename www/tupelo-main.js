@@ -60,7 +60,7 @@ $(document).ready(function () {
             // "game_join_ID"
             var game_id = elem.target.id.slice(10);
             T.log("joining game " + game_id);
-            $.ajax({url: "http://localhost/ajax/game/enter",
+            $.ajax({url: "/ajax/game/enter",
                 data: {akey: tupelo.player.akey, game_id: game_id},
                 success: gameCreateOk, error: ajaxErr});
 
@@ -117,7 +117,7 @@ $(document).ready(function () {
         setState("registered", "fast");
         listGames();
         T.log("creating timer");
-        tupelo.game_list_timer = new T.Timer("http://localhost/ajax/game/list", 5000, listGamesOk);
+        tupelo.game_list_timer = new T.Timer("/ajax/game/list", 5000, listGamesOk);
         T.log("timer created");
     }
 
@@ -234,7 +234,7 @@ $(document).ready(function () {
         var card = tupelo.hand[cardId];
         T.log(card);
         if (card !== undefined) {
-            $.ajax({url: "http://localhost/ajax/game/play_card",
+            $.ajax({url: "/ajax/game/play_card",
                 success: function (result) {
                     tupelo.my_turn = false;
                     $("#hand .card").removeClass("card_selectable");
@@ -274,7 +274,7 @@ $(document).ready(function () {
     }
 
     function getGameState() {
-        $.ajax({url: "http://localhost/ajax/game/get_state",
+        $.ajax({url: "/ajax/game/get_state",
             success: function (result) {
                 T.log(result);
                 if (result.game_state !== undefined) {
@@ -391,23 +391,23 @@ $(document).ready(function () {
             tupelo.game_list_timer = undefined;
         }
         setState("inGame");
-        $.ajax({url: "http://localhost/ajax/game/get_info",
+        $.ajax({url: "/ajax/game/get_info",
             success: gameInfoOk, error: ajaxErr, data: {game_id: tupelo.game_id}});
         getGameState();
-        tupelo.event_fetch_timer = new T.Timer("http://localhost/ajax/get_events", 2000,
+        tupelo.event_fetch_timer = new T.Timer("/ajax/get_events", 2000,
             eventsOk, {data: {akey: tupelo.player.akey}});
         dbg();
     }
 
     function listGames() {
-        $.ajax({url: "http://localhost/ajax/game/list",
+        $.ajax({url: "/ajax/game/list",
             success: listGamesOk, error: ajaxErr});
     }
 
     $("#echo_ajax").click(function () {
         //T.log("klik");
         var text = $("#echo").val();
-        $.ajax({url: "http://localhost/ajax/echo", data: {test: text},
+        $.ajax({url: "/ajax/echo", data: {test: text},
             success: function (result) {
                 $("#echo_result").html(result);
                 $("#echo").val("");
@@ -419,7 +419,7 @@ $(document).ready(function () {
         T.log(name);
         tupelo.player = new T.Player(name);
         T.log(tupelo);
-        $.ajax({url: "http://localhost/ajax/player/register", data: {player: JSON.stringify(tupelo.player)},
+        $.ajax({url: "/ajax/player/register", data: {player: JSON.stringify(tupelo.player)},
             success: registerOk, error: ajaxErr});
     });
     // sign in by pressing enter
@@ -431,7 +431,7 @@ $(document).ready(function () {
 
     $("#quit_ajax").click(function () {
         // TODO: should we cancel timers already here?
-        $.ajax({url: "http://localhost/ajax/player/quit", data: {akey: tupelo.player.akey},
+        $.ajax({url: "/ajax/player/quit", data: {akey: tupelo.player.akey},
             success: quitOk, error: function (xhr, astatus, error) {
                 if (ajaxErr(xhr, astatus, error) == true) {
                     quitOk();
@@ -440,17 +440,17 @@ $(document).ready(function () {
     });
 
     $("#game_create_ajax").click(function () {
-        $.ajax({url: "http://localhost/ajax/game/create", data: {akey: tupelo.player.akey},
+        $.ajax({url: "/ajax/game/create", data: {akey: tupelo.player.akey},
             success: gameCreateOk, error: ajaxErr});
     });
 
     $("#game_start").click(function () {
-        $.ajax({url: "http://localhost/ajax/game/start", data: {akey: tupelo.player.akey, game_id: tupelo.game_id},
+        $.ajax({url: "/ajax/game/start", data: {akey: tupelo.player.akey, game_id: tupelo.game_id},
             success: startOk, error: ajaxErr});
     });
 
     $("#game_start_with_bots").click(function () {
-        $.ajax({url: "http://localhost/ajax/game/start_with_bots", data: {akey: tupelo.player.akey, game_id: tupelo.game_id},
+        $.ajax({url: "/ajax/game/start_with_bots", data: {akey: tupelo.player.akey, game_id: tupelo.game_id},
             success: startOk, error: ajaxErr});
     });
 
