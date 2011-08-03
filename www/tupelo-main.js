@@ -33,7 +33,9 @@ $(document).ready(function () {
     }
 
     function dbg() {
-        $("#debug").html(JSON.stringify(tupelo));
+        if (T.debug === true) {
+            $("#debug").html(JSON.stringify(tupelo));
+        }
     }
 
     function ajaxErr(xhr, astatus, error) {
@@ -452,7 +454,11 @@ $(document).ready(function () {
             success: startOk, error: ajaxErr});
     });
 
-    $("#debug").click(function () { $(this).toggle(); });
+    if (T.debug === true) {
+        $("#debug").click(function () { $(this).toggle(); });
+    } else {
+        $("#debug").hide();
+    }
 
     setState("initial");
 });

@@ -6,7 +6,7 @@
 var T = (function ($) {
     var my = {};
 
-    var debug = false;
+    my.debug = false;
 
     // some constants
     my.NOLO = 0;
@@ -15,7 +15,7 @@ var T = (function ($) {
     my.ONGOING = 2;
 
     my.log = function (msg) {
-        if (debug) {
+        if (my.debug) {
             console.log(msg);
         }
     };
