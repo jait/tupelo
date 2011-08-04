@@ -8,24 +8,38 @@ from tupelo.common import GameState
 
 class TestPlayers(unittest.TestCase):
 
-    def testThreadedPlayer(self, cls=None):
+    def testThreadedPlayer(self):
         plr = players.ThreadedPlayer('Seppo')
         plr.start()
         self.assert_(plr.isAlive())
         plr.game_state.state = GameState.STOPPED
         plr.act(None, None)
-        time.sleep(2) # give the thread some time to quit itself
+        plr.join(5.0) # wait until the thread quits
         self.assertFalse(plr.isAlive())
-        plr.join()
 
-    def testThreadedPlayerStop(self, cls=None):
+    def testThreadedPlayerStop(self):
         plr = players.ThreadedPlayer('Seppo')
+        plr.start()
+        time.sleep(1)
+        self.assert_(plr.isAlive())
+        plr.stop()
+        plr.join(5.0) # wait until the thread quits
+        self.assertFalse(plr.isAlive())
+
+    def _testThreadedPlayerRestart(self):
+        plr = players.ThreadedPlayer('Seppo')
+        plr.start()
+        time.sleep(1)
+        self.assert_(plr.isAlive())
+        plr.stop()
+        plr.join(5.0) # wait until the thread quits
+        self.assertFalse(plr.isAlive())
+        # restart
         plr.start()
         self.assert_(plr.isAlive())
         plr.stop()
-        time.sleep(2) # give the thread some time to quit itself
+        plr.join(5.0) # wait until the thread quits
         self.assertFalse(plr.isAlive())
-        plr.join()
 
 
 if __name__ == '__main__':
