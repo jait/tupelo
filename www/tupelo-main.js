@@ -41,6 +41,10 @@ $(document).ready(function () {
         }
     }
 
+    function escapeHtml(str) {
+        return str.replace("<", "&lt;").replace(">", "&gt;");
+    }
+
     function dbg() {
         if (T.debug === true) {
             $("#debug").html(JSON.stringify(tupelo));
@@ -101,7 +105,7 @@ $(document).ready(function () {
                     //T.log(player);
                 }
                 //html += "<td>" + JSON.stringify(result[game_id]) + "</td>";
-                html += "<td>" + players.join(', ') + "</td>";
+                html += "<td>" + escapeHtml(players.join(", ")) + "</td>";
                 html += "<td><button class=\"game_join\" id=\"game_join_" + game_id + "\">join</button></td>";
                 html += "</tr>";
                 if (players.length == 4) {
@@ -123,7 +127,7 @@ $(document).ready(function () {
         dbg();
         // clear game list if there was one previously
         $("#game_list").html("");
-        $(".my_name").html(tupelo.player.player_name);
+        $(".my_name").html(escapeHtml(tupelo.player.player_name));
         setState("registered", "fast");
         listGames();
         T.log("creating timer");
@@ -182,7 +186,7 @@ $(document).ready(function () {
     function messageReceived(event) {
         T.log("messageReceived");
         var eventLog = $("#event_log");
-        eventLog.append(event.sender + ": " + event.message + "\n");
+        eventLog.append(escapeHtml(event.sender) + ": " + escapeHtml(event.message) + "\n");
         eventLog.scrollTop(eventLog[0].scrollHeight - eventLog.height());
         return true;
     }
@@ -391,7 +395,7 @@ $(document).ready(function () {
             index = (4 + i - myIndex) % 4;
             // set player id and name
             $("#table_" + index + " .player_data").attr("id", "player_" + pl.id);
-            $("#player_" + pl.id + " .player_name").html(pl.player_name);
+            $("#player_" + pl.id + " .player_name").html(escapeHtml(pl.player_name));
         }
     }
 
@@ -419,7 +423,7 @@ $(document).ready(function () {
         var text = $("#echo").val();
         $.ajax({url: "/ajax/echo", data: {test: text},
             success: function (result) {
-                $("#echo_result").html(result);
+                $("#echo_result").html(escapeHtml(result));
                 $("#echo").val("");
             }, error: ajaxErr});
     });

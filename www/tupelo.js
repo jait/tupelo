@@ -98,8 +98,8 @@ var T = (function ($) {
     // Card
     var suits = [{name: "spades", html: "&#x2660;"},
             {name: "diamonds", html: "&#x2666;"},
-            {name: 'clubs', html: "&#x2663;"},
-            {name: 'hearts', html: "&#x2665;"}];
+            {name: "clubs", html: "&#x2663;"},
+            {name: "hearts", html: "&#x2665;"}];
 
     function valueToChar(value) {
         switch (value) {
