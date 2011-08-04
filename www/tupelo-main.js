@@ -9,7 +9,13 @@ $(document).ready(function () {
 
     var states = {
         initial: {show: ["#register_form"],
-            hide: ["#quit_form", "#games", "#my_game", "#game"]
+            hide: ["#quit_form", "#games", "#my_game", "#game"],
+            change: function () {
+                var reg;
+                reg = $("#register_name");
+                reg.addClass("initial");
+                reg.val("Your name");
+            }
             },
         registered: {show: ["#quit_form", "#games", "#game_create_form"],
             hide: ["#register_form"]
@@ -29,6 +35,9 @@ $(document).ready(function () {
         }
         for (i = 0; i < st.show.length; i++) {
             $(st.show[i]).show(effectDuration);
+        }
+        if (st.change !== undefined) {
+            st.change();
         }
     }
 
@@ -415,8 +424,12 @@ $(document).ready(function () {
     });
 
     $("#register_ajax").click(function () {
-        var name = $("#register_name").val();
-        T.log(name);
+        var input = $("#register_name");
+        var name = input.val();
+        if (! name || input.hasClass("initial")) {
+            alert("Please enter your name first");
+            return;
+        }
         tupelo.player = new T.Player(name);
         T.log(tupelo);
         $.ajax({url: "/ajax/player/register", data: {player: JSON.stringify(tupelo.player)},
@@ -426,6 +439,13 @@ $(document).ready(function () {
     $("#register_name").keyup(function (event) {
         if ((event.keyCode || event.which) == 13) {
             $("#register_ajax").click();
+        }
+    });
+
+    $("#register_name").focus(function (event) {
+        if ($(this).hasClass("initial")) {
+            $(this).val("");
+            $(this).removeClass("initial");
         }
     });
 
