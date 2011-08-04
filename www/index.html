@@ -50,6 +50,9 @@ a.selectable {
 	margin-right: 10px;
 	padding: 5px;
 }
+#game {
+	margin-top: 1em;
+}
 #game_area {
 	float: left;
 	margin-bottom: 2em;
@@ -92,27 +95,26 @@ a.selectable {
 <script type="text/javascript" src="tupelo-main.js"></script>
 <title>Tupelo</title>
 </head>
-
 <body>
 <div id="debug"></div>
-<p>
 <div id="register_form">
+<p>
 <input id="register_name" type="text"/>
 <button id="register_ajax">sign on</button>
+</p>
 </div>
 <div id="quit_form">
 <button id="quit_ajax">sign off</button>
 </div>
-</p>
 <!--
 <p>
 <input id="echo" type="text"/>
 <button id="echo_ajax">echo</button>
+</p>
 <p>
-result: <div id="echo_result"></div>
+result: <span id="echo_result"></span>
 </p>
 -->
-</p>
 <div id="games">
 <h3>list of games</h3>
 <div id="game_list"></div>
