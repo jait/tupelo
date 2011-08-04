@@ -108,7 +108,7 @@ class GameController(object):
 
         for player in self.players:
             if player and isinstance(player, players.ThreadedPlayer):
-                if player.isAlive() and player is not threading.current_thread():
+                if player.is_alive() and player.thread is not threading.current_thread():
                     player.join()
 
     def _reset(self):
