@@ -107,6 +107,7 @@ class ThreadedPlayer(threading.Thread, Player):
         threading.Thread.__init__(self, None, None, strname)
         Player.__init__(self, name)
         self.turn_event = threading.Event()
+        self.stop_flag = False
 
     def wait_for_turn(self):
         """
@@ -121,11 +122,13 @@ class ThreadedPlayer(threading.Thread, Player):
         """
         """
         print '%s starting' % self
+        self.stop_flag = False
         while True:
 
             self.wait_for_turn()
 
-            if self.game_state.state == GameState.STOPPED:
+            if self.game_state.state == GameState.STOPPED or \
+                    self.stop_flag == True:
                 break
             elif self.game_state.state == GameState.VOTING:
                 try:
@@ -151,6 +154,13 @@ class ThreadedPlayer(threading.Thread, Player):
                 print "Warning: unknown state %d" % self.game_state.state
         
         print '%s exiting' % self
+
+    def stop(self):
+        """
+        Try to stop the thread, regardless of the state.
+        """
+        self.stop_flag = True
+        self.turn_event.set()
 
     def act(self, controller, game_state):
         """
