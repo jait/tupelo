@@ -99,7 +99,12 @@ class Player(rpc.RPCSerializable):
 class ThreadedPlayer(threading.Thread, Player):
 
     def __init__(self, name):
-        threading.Thread.__init__(self, None, None, name)
+        try:
+            strname = str(name)
+        except UnicodeEncodeError:
+            strname = filter(lambda x: ord(x) < 128, name)
+
+        threading.Thread.__init__(self, None, None, strname)
         Player.__init__(self, name)
         self.turn_event = threading.Event()
 
