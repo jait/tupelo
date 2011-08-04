@@ -123,6 +123,7 @@ $(document).ready(function () {
         dbg();
         // clear game list if there was one previously
         $("#game_list").html("");
+        $(".my_name").html(tupelo.player.player_name);
         setState("registered", "fast");
         listGames();
         T.log("creating timer");
