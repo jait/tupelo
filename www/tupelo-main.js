@@ -404,6 +404,7 @@ $(document).ready(function () {
             tupelo.game_list_timer.disable();
             tupelo.game_list_timer = undefined;
         }
+        $("#event_log").html("");
         setState("inGame");
         $.ajax({url: "/ajax/game/get_info",
             success: gameInfoOk, error: ajaxErr, data: {game_id: tupelo.game_id}});
