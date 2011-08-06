@@ -144,9 +144,12 @@ class ThreadedPlayer(Player):
         try:
             return self.thread.start()
         except RuntimeError:
+            # if the thread is still running, the exception is valid
+            if self.is_alive():
+                raise
+
             self.thread = self._create_thread()
             return self.thread.start()
-
 
     def join(self, timeout=5.0):
         """
