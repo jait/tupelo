@@ -2,6 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
 <style type="text/css">
 input.initial {
 	color: #999;
@@ -12,13 +13,16 @@ input.initial {
 .highlight {
 	background-color: #CFF;
 }
+.player_name {
+	padding: 2px 5px 2px 5px;
+	border: 1px solid transparent;
+}
 .highlight_player {
 	background-color: #CFF;
 	-webkit-border-radius: 12px;
 	-moz-border-radius: 12px;
 	border-radius: 12px;
-	padding: 2px 5px 2px 5px;
-	border: 1px solid #0CF;
+	border-color: #0CF;
 }
 .bold {
 	font-weight: bold;
@@ -69,15 +73,24 @@ a.selectable {
 	min-width: 6em;
 }
 .table {
-	margin-top: 1.5em;
-	margin-bottom: 1.5em;
+	margin-top: 1em;
+	margin-bottom: 1em;
 	min-height: 1.5em;
+	text-align: center;
 }
 #table_0, #table_2 {
 	text-align: center;
 }
 #table_0 .player_name {
 	font-weight: bold;
+}
+#table_1 .table, #table_3 .table {
+	display: -moz-inline-box;
+	display: inline-block;
+	vertical-align: middle;
+	min-width: 2.9em;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
 }
 #events {
         /*
