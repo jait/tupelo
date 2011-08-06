@@ -175,10 +175,10 @@ $(document).ready(function () {
             T.log("player not found!");
             return true;
         }
-        table.hide();
+        //table.hide();
         var card = new T.Card(event.card.suit, event.card.value);
-        table.html("<span class=\"card\">" + card.toShortHtml() + "</span>");
-        table.show(500);
+        table.html("<span style=\"display: none;\" class=\"card\">" + card.toShortHtml() + "</span>");
+        table.children().show(500);
         setTimeout(processEvent, 500);
         return false;
     }
