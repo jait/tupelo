@@ -177,7 +177,7 @@ class ThreadedPlayer(Player):
                 try:
                     self.vote()
                 except UserQuit, error:
-                    print '%s: UserQuit:' % self.id, error
+                    print 'UserQuit:', error
                     self.controller.player_quit(self.id)
                     break
                 except Exception, error:
@@ -187,7 +187,7 @@ class ThreadedPlayer(Player):
                 try:
                     self.play_card()
                 except UserQuit, error:
-                    print '%s: UserQuit:' % self.id, error
+                    print 'UserQuit:', error
                     self.controller.player_quit(self.id)
                     break
                 except Exception, error:
