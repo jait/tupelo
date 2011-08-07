@@ -213,6 +213,12 @@ $(document).ready(function () {
         return false; // this event is not handled yet
     }
 
+    function getTeamPlayers(team) {
+        // TODO: should we store these in JS instead of the DOM?
+        return [$("#table_" + team + " .player_name").html(),
+            $("#table_" + (team + 2) + " .player_name").html()];
+    }
+
     function updateGameState(state) {
         var statusStr = "", key;
         for (key in state) {
@@ -230,7 +236,17 @@ $(document).ready(function () {
                 statusStr = "RAMI";
             }
         }
-        statusStr = "<span class=\"status\">" + statusStr + "</span>";
+        statusStr = "<span>" + statusStr + "</span>";
+        statusStr += "<span>tricks: " + state.tricks[0] + " - " + state.tricks[1] + "</span>";
+        if (state.score !== undefined) {
+            if (state.score[0] > 0) {
+                statusStr += "<span>score: " + getTeamPlayers(0).join(" &amp; ") + ": " + state.score[0] + "</span>";
+            } else if (state.score[1] > 0) {
+                statusStr += "<span>score: " + getTeamPlayers(1).join(" &amp; ") + ": " + state.score[1] + "</span>";
+            } else {
+                statusStr += "<span>score: 0</span>";
+            }
+        }
         $("#game_status").html(statusStr);
 
         // highlight the player in turn
@@ -252,6 +268,7 @@ $(document).ready(function () {
                 success: function (result) {
                     tupelo.my_turn = false;
                     $("#hand .card").removeClass("card_selectable");
+                    // TODO: after playing a hand, this shows the next hand too quickly
                     getGameState();
                 },
                 error: function (xhr, astatus, error) {
