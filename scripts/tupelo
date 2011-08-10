@@ -18,7 +18,7 @@ def _run_remote(server_addr):
     game.create_game()
     player.start()
     game.start_game_with_bots()
-    
+
 def _run_local():
     """
     Run, Forrest! Run!
@@ -36,13 +36,13 @@ def _run_local():
 
     game.start_game()
     game.wait_for_shutdown()
-       
+
 def _main():
     parser = OptionParser()
     parser.add_option("-r", "--remote", dest='remote', action="store_true",
             help="Play using a remote server")
     parser.add_option("-s", "--server", dest='server', action="store",
-            type="string", metavar='SERVER:PORT', 
+            type="string", metavar='SERVER:PORT',
             default="localhost:%d" % DEFAULT_PORT,
             help="Use given server and port")
     (opts, args) = parser.parse_args()
@@ -51,6 +51,6 @@ def _main():
         _run_remote(opts.server)
     else:
         _run_local()
-        
+
 if __name__ == '__main__':
     _main()
