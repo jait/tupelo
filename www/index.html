@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+<style type="text/css">
+input.initial {
+	color: #999;
+}
+.my_name {
+	font-weight: bold;
+}
+.highlight {
+	background-color: #CFF;
+}
+.player_name {
+	padding: 2px 5px 2px 5px;
+	border: 1px solid transparent;
+}
+.highlight_player {
+	background-color: #CFF;
+	-webkit-border-radius: 12px;
+	-moz-border-radius: 12px;
+	border-radius: 12px;
+	border-color: #0CF;
+}
+.bold {
+	font-weight: bold;
+}
+.diamonds {
+	color: red;
+}
+.hearts{
+	color: red;
+}
+.clubs {
+	color: black;
+}
+.spades {
+	color: black;
+}
+.card {
+	margin: 0.4em;
+	padding: 10px 3px 10px 3px;
+	border: 1px solid black;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	text-align: center;
+}
+.card_selectable:hover {
+	background-color: #DFF;
+}
+a.selectable {
+	text-decoration: none;
+}
+#game_status {
+	margin-bottom: 1em;
+}
+#game_status span {
+	margin-right: 10px;
+	padding: 2px 5px 2px 5px;
+	border: 1px solid #666;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	background: #EEE;
+}
+#game {
+	margin-top: 1em;
+}
+#game_area {
+	float: left;
+	margin-bottom: 2em;
+}
+#game_area td {
+	height: 3em;
+	min-width: 6em;
+}
+.table {
+	margin-top: 1em;
+	margin-bottom: 1em;
+	min-height: 1.5em;
+	text-align: center;
+}
+#table_0, #table_2 {
+	text-align: center;
+}
+#table_0 .player_name {
+	font-weight: bold;
+}
+#table_1 .table, #table_3 .table {
+	display: -moz-inline-box;
+	display: inline-block;
+	vertical-align: middle;
+	min-width: 2.9em;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+#events {
+        /*
+	right: 0;
+	*/
+	float: right;
+	margin-bottom: 2em;
+}
+#events h4 {
+	margin-top: 0;
+}
+#hand {
+	clear: left;
+	margin-top: 2em;
+}
+</style>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="tupelo.js"></script>
+<script type="text/javascript" src="tupelo-main.js"></script>
+<title>Tupelo</title>
+</head>
+<body>
+<div id="debug"></div>
+<div id="register_form">
+<p>
+<input id="register_name" type="text"/>
+<button id="register_ajax">sign on</button>
+</p>
+</div>
+<div id="quit_form">
+Signed on as <span class="my_name"></span> <button id="quit_ajax">sign off</button>
+</div>
+<!--
+<p>
+<input id="echo" type="text"/>
+<button id="echo_ajax">echo</button>
+</p>
+<p>
+result: <span id="echo_result"></span>
+</p>
+-->
+<div id="games">
+<h3>list of games</h3>
+<div id="game_list"></div>
+<div id="game_create_form">
+<button id="game_create_ajax">create game</button>
+</div>
+</div>
+<div id="my_game">
+<p id="joined_game"></p>
+<button id="game_start">start</button>
+<button id="game_start_with_bots">start with bots</button>
+</div>
+<div id="game">
+<div id="game_status"></div>
+<div id="game_area">
+<table>
+<tbody>
+<tr><td/><td id="table_2"><div class="player_data"><div class="player_name"></div><div class="table"></div></div></td><td/></tr>
+<tr><td id="table_1"><span class="player_data"><span class="player_name"></span><span class="table"></span></span></td><td/><td id="table_3"><span class="player_data"><span class="table"></span><span class="player_name"></span></span></td></tr>
+<tr><td/><td id="table_0"><div class="player_data"><div class="table"></div><div class="player_name"></div></div></td><td/></tr>
+</tbody>
+</table>
+</div>
+<div id="events">
+<h4>log</h4>
+<textarea id="event_log" rows="10" cols="40" readonly="readonly">
+</textarea>
+</div>
+<div id="hand"></div>
+</div>
+</body>
+</html>

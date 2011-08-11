@@ -7,7 +7,7 @@ except ImportError:
     from distutils.core import setup
 
 
-VERSION = "0.0.2"
+VERSION = "0.0.4"
 
 setup (name = "tupelo",
     description = "Random code around a card game called Tuppi",
@@ -16,10 +16,10 @@ setup (name = "tupelo",
     author_email = "jari.tenhunen@iki.fi",
     license = "BSD",
     packages = ['tupelo'],
-    scripts = ['qtupelo.py', 'tupelo.py', 'tupelo-server.py'],
-    platforms="Python 2.4 and later.",
+    scripts = ['scripts/tupelo', 'scripts/tupelo-server', 'scripts/qtupelo'],
+    data_files = [('share/tupelo/www', ['www/index.html', 'www/tupelo.js',
+            'www/tupelo-main.js'])],
+    platforms="Python 2.5 and later.",
     test_suite = "nose.collector"
     )
-
-
 

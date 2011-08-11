@@ -84,10 +84,8 @@ class TestTupeloRPCInterface(unittest.TestCase):
         self.assert_(state.has_key('game_state'))
         self.assertEqual(state['game_state']['state'], 0)
 
-        return
-        # the following hangs possibly because of threads
         try:
-            ret = iface.game_start(g_id)
+            ret = iface.game_start(p_datas[0]['akey'], g_id)
             self.assertEqual(ret, True)
 
             state = iface.game_get_state(p_datas[0]['akey'], g_id)

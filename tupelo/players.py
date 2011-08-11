@@ -96,12 +96,24 @@ class Player(rpc.RPCSerializable):
         raise NotImplementedError()
 
 
-class ThreadedPlayer(threading.Thread, Player):
+class ThreadedPlayer(Player):
 
     def __init__(self, name):
-        threading.Thread.__init__(self, None, None, name)
         Player.__init__(self, name)
+        self.thread = self._create_thread()
         self.turn_event = threading.Event()
+        self.stop_flag = False
+
+    def _create_thread(self):
+        """
+        Create a new thread for this player.
+        """
+        try:
+            strname = str(self.player_name)
+        except UnicodeEncodeError:
+            strname = filter(lambda x: ord(x) < 128, self.player_name)
+
+        return threading.Thread(None, self.run, strname)
 
     def wait_for_turn(self):
         """
@@ -112,21 +124,60 @@ class ThreadedPlayer(threading.Thread, Player):
         #print "%s it's about time!" % self
         self.turn_event.clear()
 
+    def is_alive(self):
+        """
+        Return true if the player thread is alive.
+        """
+        if self.thread is not None:
+            return self.thread.isAlive()
+
+        return False
+
+    def start(self):
+        """
+        (Re)start the player thread.
+        """
+        if self.thread is None:
+            self.thread = self._create_thread()
+
+        # try to handle restart attempts
+        try:
+            return self.thread.start()
+        except RuntimeError:
+            # if the thread is still running, the exception is valid
+            if self.is_alive():
+                raise
+
+            self.thread = self._create_thread()
+            return self.thread.start()
+
+    def join(self, timeout=5.0):
+        """
+        Join the player thread, if one exists.
+        """
+        if self.thread is None:
+            return
+
+        return self.thread.join(timeout)
+
     def run(self):
         """
+        The real work is here.
         """
         print '%s starting' % self
+        self.stop_flag = False
         while True:
 
             self.wait_for_turn()
 
-            if self.game_state.state == GameState.STOPPED:
+            if self.game_state.state == GameState.STOPPED or \
+                    self.stop_flag == True:
                 break
             elif self.game_state.state == GameState.VOTING:
                 try:
                     self.vote()
                 except UserQuit, error:
-                    print '%s: UserQuit:' % self.id, error
+                    print 'UserQuit:', error
                     self.controller.player_quit(self.id)
                     break
                 except Exception, error:
@@ -136,7 +187,7 @@ class ThreadedPlayer(threading.Thread, Player):
                 try:
                     self.play_card()
                 except UserQuit, error:
-                    print '%s: UserQuit:' % self.id, error
+                    print 'UserQuit:', error
                     self.controller.player_quit(self.id)
                     break
                 except Exception, error:
@@ -144,8 +195,15 @@ class ThreadedPlayer(threading.Thread, Player):
                     raise
             else:
                 print "Warning: unknown state %d" % self.game_state.state
-        
+
         print '%s exiting' % self
+
+    def stop(self):
+        """
+        Try to stop the thread, regardless of the state.
+        """
+        self.stop_flag = True
+        self.turn_event.set()
 
     def act(self, controller, game_state):
         """
