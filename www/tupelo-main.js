@@ -145,7 +145,7 @@ $(document).ready(function () {
             tupelo.event_fetch_timer = undefined;
         }
         if (tupelo.event_timer !== undefined) {
-            tupelo.event_timer.disable();
+            clearTimeout(tupelo.event_timer);
             tupelo.event_timer = undefined;
         }
         tupelo.player = undefined;
