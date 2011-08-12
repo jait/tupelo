@@ -47,6 +47,18 @@ class Player(rpc.RPCSerializable):
 
         return player
 
+    def start(self):
+        """
+        Start the player.
+        """
+        pass
+
+    def stop(self):
+        """
+        Stop the player.
+        """
+        pass
+
     def card_played(self, player, card, game_state):
         """
         Signal that a card has been played by the given player.
