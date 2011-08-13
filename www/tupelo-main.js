@@ -145,7 +145,7 @@ $(document).ready(function () {
             tupelo.event_fetch_timer = undefined;
         }
         if (tupelo.event_timer !== undefined) {
-            tupelo.event_timer.disable();
+            clearTimeout(tupelo.event_timer);
             tupelo.event_timer = undefined;
         }
         tupelo.player = undefined;
@@ -240,9 +240,9 @@ $(document).ready(function () {
         statusStr += "<span>tricks: " + state.tricks[0] + " - " + state.tricks[1] + "</span>";
         if (state.score !== undefined) {
             if (state.score[0] > 0) {
-                statusStr += "<span>score: " + getTeamPlayers(0).join(" &amp; ") + ": " + state.score[0] + "</span>";
+                statusStr += "<span>score: " + escapeHtml(getTeamPlayers(0).join(" &amp; ")) + ": " + state.score[0] + "</span>";
             } else if (state.score[1] > 0) {
-                statusStr += "<span>score: " + getTeamPlayers(1).join(" &amp; ") + ": " + state.score[1] + "</span>";
+                statusStr += "<span>score: " + escapeHtml(getTeamPlayers(1).join(" &amp; ")) + ": " + state.score[1] + "</span>";
             } else {
                 statusStr += "<span>score: 0</span>";
             }

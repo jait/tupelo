@@ -3,7 +3,7 @@
 
 import players
 import rpc
-from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator
+from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState
 from game import GameController
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 import sys
@@ -87,6 +87,8 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.send_header("Content-length", str(len(response)))
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Pragma", "no-cache")
 
             self.end_headers()
             self.wfile.write(response)
@@ -411,12 +413,12 @@ class TupeloRPCInterface(object):
         return True
 
 
-class RPCProxyPlayer(players.ThreadedPlayer):
+class RPCProxyPlayer(players.Player):
     """
     Server-side class for remote/RPC players.
     """
     def __init__(self, name):
-        players.ThreadedPlayer.__init__(self, name)
+        players.Player.__init__(self, name)
         self.events = Queue.Queue()
         self.game = None
 
@@ -450,4 +452,16 @@ class RPCProxyPlayer(players.ThreadedPlayer):
             pass
 
         return eventlist
+
+    def act(self, controller, game_state):
+        self.controller = controller
+        self.game_state.update(game_state)
+        if self.game_state.state == GameState.STOPPED:
+            return
+        elif self.game_state.state == GameState.VOTING:
+            self.vote()
+        elif self.game_state.state == GameState.ONGOING:
+            self.play_card()
+        else:
+            print "Warning: unknown state %d" % self.game_state.state
 

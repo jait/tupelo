@@ -49,8 +49,7 @@ class GameController(object):
         plr = self.get_player(player_id)
         if plr:
             self.players.remove(plr)
-            if isinstance(plr, players.ThreadedPlayer):
-                plr.stop() # stop the thread
+            plr.stop() # stops the thread in case of ThreadedPlayer
 
         # reset the game unless we are still in OPEN state
         if self.state.state != GameState.OPEN:
