@@ -93,8 +93,13 @@ class TestTupeloRPCInterface(unittest.TestCase):
             self.assertEqual(state['game_state']['state'], 1)
             self.assert_(state.has_key('hand'))
 
-            ret = iface.player_quit(p_datas[0]['akey'])
+            ret = iface.game_leave(p_datas[0]['akey'], g_id)
             self.assertEqual(ret, True)
+
+            for p_data in p_datas:
+                ret = iface.player_quit(p_data['akey'])
+                self.assertEqual(ret, True)
+
         finally:
             for game in iface.games:
                 game._reset()

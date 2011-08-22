@@ -294,16 +294,16 @@ class TupeloRPCInterface(object):
         """
         Player quits.
         """
-        # leave the game. Does not necessarily end the game.
         player = self.authenticated_player
         game = player.game
+        # leave the game. Does not necessarily end the game.
         if game:
-            game.player_leave(player.id)
-            player.game = None
-            # if the game was terminated we need to kill the old game instance
-            if len(game.players) == 0:
-                self.games.remove(game)
+            try:
+                self.game_leave(self.authenticated_player.akey, game.id)
+            except GameError:
+                pass
 
+        self.players.remove(player)
         # without allow_none, XML-RPC methods must always return something
         return True
 
@@ -352,6 +352,21 @@ class TupeloRPCInterface(object):
         game.register_player(player)
         player.game = game
         return game_id
+
+    @authenticated
+    def game_leave(self, game_id):
+        """
+        Leave the game. Does not necessarily end the game.
+        """
+        game = self._get_game(int(game_id))
+        player = self.authenticated_player
+        game.player_leave(player.id)
+        player.game = None
+        # if the game was terminated we need to kill the old game instance
+        if len(game.players) == 0:
+            self.games.remove(game)
+
+        return True
 
     @authenticated
     def game_get_state(self, game_id):
