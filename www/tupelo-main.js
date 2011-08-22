@@ -18,7 +18,7 @@ $(document).ready(function () {
             }
             },
         registered: {show: ["#quit_form", "#games", "#game_create_form"],
-            hide: ["#register_form"]
+            hide: ["#register_form", "#my_game", "#game"]
             },
         gameCreated: {show: ["#my_game"],
             hide: ["#game_create_form"]
@@ -135,11 +135,7 @@ $(document).ready(function () {
         T.log("timer created");
     }
 
-    function quitOk(result) {
-        if (tupelo.game_list_timer !== undefined) {
-            tupelo.game_list_timer.disable();
-            tupelo.game_list_timer = undefined;
-        }
+    function leftGame() {
         if (tupelo.event_fetch_timer !== undefined) {
             tupelo.event_fetch_timer.disable();
             tupelo.event_fetch_timer = undefined;
@@ -148,11 +144,27 @@ $(document).ready(function () {
             clearTimeout(tupelo.event_timer);
             tupelo.event_timer = undefined;
         }
-        tupelo.player = undefined;
         tupelo.game_id = undefined;
         tupelo.game_state = {};
         tupelo.hand = undefined;
         tupelo.my_turn = undefined;
+    }
+
+    function leaveOk(result) {
+        leftGame();
+        dbg();
+        listGames();
+        setState("registered", "fast");
+        tupelo.game_list_timer = new T.Timer("/ajax/game/list", 5000, listGamesOk);
+    }
+
+    function quitOk(result) {
+        leftGame();
+        if (tupelo.game_list_timer !== undefined) {
+            tupelo.game_list_timer.disable();
+            tupelo.game_list_timer = undefined;
+        }
+        tupelo.player = undefined;
         T.log(tupelo);
         dbg();
         setState("initial", "fast");
@@ -478,6 +490,16 @@ $(document).ready(function () {
             success: quitOk, error: function (xhr, astatus, error) {
                 if (ajaxErr(xhr, astatus, error) == true) {
                     quitOk();
+                }
+            }});
+    });
+
+    $(".game_leave_btn").click(function () {
+        // TODO: should we cancel timers already here?
+        $.ajax({url: "/ajax/game/leave", data: {akey: tupelo.player.akey, game_id: tupelo.game_id},
+            success: leaveOk, error: function (xhr, astatus, error) {
+                if (ajaxErr(xhr, astatus, error) == true) {
+                    leaveOk();
                 }
             }});
     });
