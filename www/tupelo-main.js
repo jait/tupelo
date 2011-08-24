@@ -155,7 +155,9 @@ $(document).ready(function () {
         dbg();
         listGames();
         setState("registered", "fast");
-        tupelo.game_list_timer = new T.Timer("/ajax/game/list", 5000, listGamesOk);
+        if (tupelo.game_list_timer === undefined) {
+            tupelo.game_list_timer = new T.Timer("/ajax/game/list", 5000, listGamesOk);
+        }
     }
 
     function quitOk(result) {
