@@ -243,10 +243,11 @@ class TupeloRPCInterface(object):
         """
         Get game by id or raise an error.
         """
-        try:
-            return self.games[game_id]
-        except IndexError:
-            raise GameError('Game %d does not exist' % game_id)
+        for game in self.games:
+            if game.id == game_id:
+                return game
+
+        raise GameError('Game %s does not exist' % game_id)
 
     def echo(self, test):
         return test
@@ -333,7 +334,7 @@ class TupeloRPCInterface(object):
         game = GameController()
         # TODO: slight chance of race
         self.games.append(game)
-        game.id = self.games.index(game)
+        game.id = short_uuid()
         self.game_enter(self.authenticated_player.akey, game.id)
         return game.id
 
@@ -344,7 +345,7 @@ class TupeloRPCInterface(object):
 
         Return game ID
         """
-        game = self._get_game(int(game_id))
+        game = self._get_game(game_id)
         player = self.authenticated_player
         if player.game:
             raise GameError("Player is already in a game")
@@ -358,7 +359,7 @@ class TupeloRPCInterface(object):
         """
         Leave the game. Does not necessarily end the game.
         """
-        game = self._get_game(int(game_id))
+        game = self._get_game(game_id)
         player = self.authenticated_player
         game.player_leave(player.id)
         player.game = None
@@ -373,7 +374,7 @@ class TupeloRPCInterface(object):
         """
         Get the state of a game for given player.
         """
-        game = self._get_game(int(game_id))
+        game = self._get_game(game_id)
         response = {}
         response['game_state'] = rpc.rpc_encode(game.state)
         response['hand'] = rpc.rpc_encode(self.authenticated_player.hand)
@@ -383,7 +384,7 @@ class TupeloRPCInterface(object):
         """
         Get the (static) information of a game.
         """
-        game = self._get_game(int(game_id))
+        game = self._get_game(game_id)
         return _game_get_rpc_info(game)
 
     @authenticated
@@ -398,7 +399,7 @@ class TupeloRPCInterface(object):
         """
         Start a game.
         """
-        game = self._get_game(int(game_id))
+        game = self._get_game(game_id)
         game.start_game()
         return True
 
@@ -407,7 +408,6 @@ class TupeloRPCInterface(object):
         """
         Start a game with bots.
         """
-        game_id = int(game_id)
         game = self._get_game(game_id)
         i = 1
         while len(game.players) < 4:
@@ -422,7 +422,7 @@ class TupeloRPCInterface(object):
         """
         Play one card in given game, by given player.
         """
-        game = self._get_game(int(game_id))
+        game = self._get_game(game_id)
         player = self.authenticated_player
         game.play_card(player, rpc.rpc_decode(Card, card))
         return True

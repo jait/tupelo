@@ -97,7 +97,7 @@ $(document).ready(function () {
         var html = "<table>", disabledIds = [], game_id, i, plr;
         for (game_id in result) {
             if (result.hasOwnProperty(game_id)) {
-                html += "<tr id=\"game_id_" + game_id + "\"><td>" + game_id + "</td>";
+                html += "<tr id=\"game_id_" + game_id + "\">";
                 var players = [];
                 for (i = 0; i < result[game_id].length; i++) {
                     plr = new T.Player().fromObj(result[game_id][i]);
