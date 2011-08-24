@@ -56,6 +56,26 @@ input.initial {
 a.selectable {
 	text-decoration: none;
 }
+.h1 {
+	font-size: 30px;
+	position: relative;
+	top: 10px;
+	font-family: serif;
+}
+body {
+	background: #fff url('img/bg.png') 0 0 repeat-x;
+	font-family: Arial, Helvetica, sans-serif;
+}
+#header, #main_content {
+	width: 800px;
+	margin: 0 auto 0 auto;
+}
+#header {
+	height: 75px;
+}
+#user_data {
+	float: right;
+}
 #game_status {
 	margin-bottom: 1em;
 }
@@ -121,6 +141,9 @@ a.selectable {
 </head>
 <body>
 <div id="debug"></div>
+<div id="header">
+<span class="h1">tupelo</span>
+<div id="user_data">
 <div id="register_form">
 <p>
 <input id="register_name" type="text"/>
@@ -128,8 +151,13 @@ a.selectable {
 </p>
 </div>
 <div id="quit_form">
+<p>
 Signed on as <span class="my_name"></span> <button id="quit_btn" class="btn"><span><span>sign off</span></span></button>
+</p>
 </div>
+</div>
+</div>
+<div id="main_content">
 <!--
 <p>
 <input id="echo" type="text"/>
@@ -169,6 +197,7 @@ result: <span id="echo_result"></span>
 </textarea>
 </div>
 <div id="hand"></div>
+</div>
 </div>
 </body>
 </html>
