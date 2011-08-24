@@ -94,7 +94,7 @@ $(document).ready(function () {
     function listGamesOk(result) {
         //T.log("listGamesOk");
         //T.log(result);
-        var html = "<table>", disabledIds = [], game_id, i, plr;
+        var html = "", disabledIds = [], game_id, i, plr;
         for (game_id in result) {
             if (result.hasOwnProperty(game_id)) {
                 html += "<tr id=\"game_id_" + game_id + "\">";
@@ -106,15 +106,14 @@ $(document).ready(function () {
                 }
                 //html += "<td>" + JSON.stringify(result[game_id]) + "</td>";
                 html += "<td>" + escapeHtml(players.join(", ")) + "</td>";
-                html += "<td><button class=\"game_join btn\" id=\"game_join_" + game_id + "\"><span><span>join</span></span></button></td>";
+                html += "<td class=\"game_list_actions\"><button class=\"game_join btn\" id=\"game_join_" + game_id + "\"><span><span>join</span></span></button></td>";
                 html += "</tr>";
                 if (players.length == 4) {
                     disabledIds.push("game_join_" + game_id);
                 }
             }
         }
-        html += "</table>";
-        $("#game_list").html(html);
+        $("#game_list table tbody").html(html);
         updateGameLinks(disabledIds);
         dbg();
     }
@@ -126,7 +125,7 @@ $(document).ready(function () {
         T.log(tupelo);
         dbg();
         // clear game list if there was one previously
-        $("#game_list").html("");
+        $("#game_list table tbody").html("");
         $(".my_name").html(escapeHtml(tupelo.player.player_name));
         setState("registered", "fast");
         listGames();

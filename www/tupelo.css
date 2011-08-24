@@ -7,6 +7,9 @@ input.initial {
 .highlight {
 	background-color: #CFF;
 }
+#game_list .highlight {
+	background-color: #def;
+}
 .player_name {
 	padding: 2px 5px 2px 5px;
 	border: 1px solid transparent;
@@ -55,6 +58,20 @@ a.selectable {
 	top: 10px;
 	font-family: serif;
 }
+.box_heading {
+	margin: 0 0 0 -3px;
+	border-radius: 5px 5px 0 0;
+	padding: 9px 5px 9px 5px;
+}
+h3.box_heading {
+	font-size: 1.1em;
+}
+.game_list_actions {
+	text-align: right;
+}
+#games .box_heading {
+	background: none repeat scroll 0 0 #ded;
+}
 body {
 	background: #fff url('img/bg.png') 0 0 repeat-x;
 	font-family: Arial, Helvetica, sans-serif;
@@ -69,6 +86,28 @@ body {
 }
 #user_data {
 	float: right;
+}
+#games {
+	background: none repeat scroll 0 0 #efe;
+	border: 1px solid #aba;
+	border-radius: 5px 5px 5px 5px;
+	margin-top: 0.5em;
+	padding-left: 3px;
+	padding-bottom: 0.5em;
+	width: 400px;
+}
+#game_list table {
+	width: 100%;
+	border-spacing: 0;
+}
+#game_list table td {
+	padding: 3px;
+	border-style: solid;
+	border-width: 0 0 1px 0;
+	border-color: #ded;
+}
+#game_create_form {
+	padding-top: 0.3em;
 }
 #game_status {
 	margin-bottom: 1em;
