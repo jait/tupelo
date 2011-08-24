@@ -18,7 +18,8 @@ setup (name = "tupelo",
     packages = ['tupelo'],
     scripts = ['scripts/tupelo', 'scripts/tupelo-server'],
     data_files = [('share/tupelo/www', ['www/index.html', 'www/tupelo.js',
-            'www/tupelo-main.js'])],
+            'www/tupelo-main.js', 'www/tupelo.css', 'www/buttons.css']),
+            ('share/tupelo/www/img', ['www/img/bg.png', 'www/img/bg-button.gif'])],
     platforms="Python 2.5 and later.",
     test_suite = "nose.collector"
     )
