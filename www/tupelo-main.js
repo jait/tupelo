@@ -69,9 +69,9 @@ $(document).ready(function () {
     }
 
     function updateGameLinks(disabledIds) {
-        var gameJoinClicked = function (elem) {
+        var gameJoinClicked = function (event) {
             // "game_join_ID"
-            var game_id = elem.target.id.slice(10);
+            var game_id = this.id.slice(10);
             T.log("joining game " + game_id);
             $.ajax({url: "/ajax/game/enter",
                 data: {akey: tupelo.player.akey, game_id: game_id},
