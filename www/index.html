@@ -3,6 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+<link rel="stylesheet" type="text/css" href="buttons.css" /> 
 <style type="text/css">
 input.initial {
 	color: #999;
@@ -122,11 +123,11 @@ a.selectable {
 <div id="register_form">
 <p>
 <input id="register_name" type="text"/>
-<button id="register_ajax">sign on</button>
+<button id="register_btn" class="btn"><span><span>sign on</span></span></button>
 </p>
 </div>
 <div id="quit_form">
-Signed on as <span class="my_name"></span> <button id="quit_ajax">sign off</button>
+Signed on as <span class="my_name"></span> <button id="quit_btn" class="btn"><span><span>sign off</span></span></button>
 </div>
 <!--
 <p>
@@ -141,17 +142,17 @@ result: <span id="echo_result"></span>
 <h3>list of games</h3>
 <div id="game_list"></div>
 <div id="game_create_form">
-<button id="game_create_ajax">create game</button>
+<button id="game_create_btn" class="btn"><span><span>create game</span></span></button>
 </div>
 </div>
 <div id="my_game">
 <p id="joined_game"></p>
-<button class="game_leave_btn">leave</button>
-<button id="game_start">start</button>
-<button id="game_start_with_bots">start with bots</button>
+<button class="game_leave_btn btn"><span><span>leave</span></span></button>
+<button id="game_start" class="btn"><span><span>start</span></span></button>
+<button id="game_start_with_bots" class="btn"><span><span>start with bots</span></span></button>
 </div>
 <div id="game">
-<div id="game_status_area"><span id="game_status"></span><span id="game_leave_form"><button class="game_leave_btn">leave game</button></span></div>
+<div id="game_status_area"><span id="game_status"></span><span id="game_leave_form"><button class="game_leave_btn btn"><span><span>leave game</span></span></button></span></div>
 <div id="game_area">
 <table>
 <tbody>

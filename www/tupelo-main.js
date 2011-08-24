@@ -106,7 +106,7 @@ $(document).ready(function () {
                 }
                 //html += "<td>" + JSON.stringify(result[game_id]) + "</td>";
                 html += "<td>" + escapeHtml(players.join(", ")) + "</td>";
-                html += "<td><button class=\"game_join\" id=\"game_join_" + game_id + "\">join</button></td>";
+                html += "<td><button class=\"game_join btn\" id=\"game_join_" + game_id + "\"><span><span>join</span></span></button></td>";
                 html += "</tr>";
                 if (players.length == 4) {
                     disabledIds.push("game_join_" + game_id);
@@ -460,7 +460,7 @@ $(document).ready(function () {
             }, error: ajaxErr});
     });
 
-    $("#register_ajax").click(function () {
+    $("#register_btn").click(function () {
         var input = $("#register_name");
         var name = input.val();
         if (! name || input.hasClass("initial")) {
@@ -475,7 +475,7 @@ $(document).ready(function () {
     // sign in by pressing enter
     $("#register_name").keyup(function (event) {
         if ((event.keyCode || event.which) == 13) {
-            $("#register_ajax").click();
+            $("#register_btn").click();
         }
     });
 
@@ -486,7 +486,7 @@ $(document).ready(function () {
         }
     });
 
-    $("#quit_ajax").click(function () {
+    $("#quit_btn").click(function () {
         // TODO: should we cancel timers already here?
         $.ajax({url: "/ajax/player/quit", data: {akey: tupelo.player.akey},
             success: quitOk, error: function (xhr, astatus, error) {
@@ -506,7 +506,7 @@ $(document).ready(function () {
             }});
     });
 
-    $("#game_create_ajax").click(function () {
+    $("#game_create_btn").click(function () {
         $.ajax({url: "/ajax/game/create", data: {akey: tupelo.player.akey},
             success: gameCreateOk, error: ajaxErr});
     });
