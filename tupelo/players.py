@@ -41,9 +41,9 @@ class Player(rpc.RPCSerializable):
         Decode an RPC-form object into an instance of cls.
         """
         player = cls(rpcobj['player_name'])
-        for attr in ('id', 'team'):
-            if rpcobj.has_key(attr):
-                setattr(player, attr, rpcobj[attr])
+        for attr, atype in cls.iter_rpc_attrs():
+            if attr != 'player_name':
+                player.rpc_decode_attr(rpcobj, attr, atype)
 
         return player
 

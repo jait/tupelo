@@ -118,13 +118,7 @@ class RPCSerializable(object):
         if hasattr(cls, 'rpc_attrs'):
             instance = cls()
             for attr, atype in cls.iter_rpc_attrs():
-                if rpcobj.has_key(attr):
-                    attr_cls = cls.get_class_for_type(atype)
-                    if attr_cls:
-                        setattr(instance, attr,
-                                rpc_decode(attr_cls, rpcobj[attr]))
-                    else:
-                        setattr(instance, attr, rpcobj[attr])
+                instance.rpc_decode_attr(rpcobj, attr, atype)
 
             return instance
         else:
@@ -136,6 +130,18 @@ class RPCSerializable(object):
         Decode an rpc object into an instance of cls.
         """
         return cls.rpc_decode_simple(rpcobj)
+
+    def rpc_decode_attr(self, rpcobj, attr, atype=None):
+        """
+        Decode one attribute.
+        """
+        if rpcobj.has_key(attr):
+            attr_cls = self.get_class_for_type(atype)
+            if attr_cls:
+                setattr(self, attr,
+                        rpc_decode(attr_cls, rpcobj[attr]))
+            else:
+                setattr(self, attr, rpcobj[attr])
 
     @classmethod
     @_memoize
