@@ -1,3 +1,8 @@
+body {
+	background: #fff url('img/bg.png') 0 0 repeat-x;
+	font-family: Arial, Helvetica, sans-serif;
+	margin: 0;
+}
 input.initial {
 	color: #999;
 }
@@ -75,11 +80,10 @@ h3.box_heading {
 .in_game {
 	color: #999;
 }
-body {
-	background: #fff url('img/bg.png') 0 0 repeat-x;
-	font-family: Arial, Helvetica, sans-serif;
-	margin: 0;
+#my_game {
+	clear: left;
 }
+
 #header, #main_content {
 	width: 800px;
 	margin: 0 auto 0 auto;
