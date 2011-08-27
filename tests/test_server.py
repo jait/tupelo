@@ -23,6 +23,17 @@ class TestTupeloRPCInterface(unittest.TestCase):
         self.assert_(isinstance(p_data['akey'], basestring))
         plr = iface._ensure_auth(p_data['akey'])
         self.assertEqual(plr.id, p_data['player_id'])
+        # list players
+        players_raw = iface.player_list(p_data['akey'])
+        self.assert_(isinstance(players_raw, list))
+        players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
+        me = None
+        for pl in players:
+            if pl.id == p_data['player_id']:
+                me = pl
+                break
+        self.assert_(me is not None)
+        self.assertEqual(me.player_name, encoded['player_name'])
         iface._clear_auth()
 
     def testGame(self):

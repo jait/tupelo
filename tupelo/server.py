@@ -308,6 +308,13 @@ class TupeloRPCInterface(object):
         # without allow_none, XML-RPC methods must always return something
         return True
 
+    @authenticated
+    def player_list(self):
+        """
+        List all players on server.
+        """
+        return [rpc.rpc_encode(player) for player in self.players]
+
     def game_list(self, state=None):
         """
         List all games on server that are in the given state.
@@ -436,6 +443,14 @@ class RPCProxyPlayer(players.Player):
         players.Player.__init__(self, name)
         self.events = Queue.Queue()
         self.game = None
+
+    def rpc_encode(self):
+        rpcobj = players.Player.rpc_encode(self)
+        # don't encode the game object, just the ID
+        if self.game:
+            rpcobj['game_id'] = rpc.rpc_encode(self.game.id)
+
+        return rpcobj
 
     def vote(self):
         self.play_card()
