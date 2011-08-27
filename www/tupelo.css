@@ -69,8 +69,11 @@ h3.box_heading {
 .game_list_actions {
 	text-align: right;
 }
-#games .box_heading {
+#games .box_heading, #players .box_heading {
 	background: none repeat scroll 0 0 #ded;
+}
+.in_game {
+	color: #999;
 }
 body {
 	background: #fff url('img/bg.png') 0 0 repeat-x;
@@ -87,24 +90,39 @@ body {
 #user_data {
 	float: right;
 }
-#games {
+.listbox {
 	background: none repeat scroll 0 0 #efe;
 	border: 1px solid #aba;
 	border-radius: 5px 5px 5px 5px;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
 	margin-top: 0.5em;
 	padding-left: 3px;
 	padding-bottom: 0.5em;
 	width: 400px;
 }
-#game_list table {
+.listbox table {
 	width: 100%;
 	border-spacing: 0;
 }
-#game_list table td {
+.listbox table td {
 	padding: 3px;
 	border-style: solid;
 	border-width: 0 0 1px 0;
 	border-color: #ded;
+}
+#games {
+	float: left;
+	background: none repeat scroll 0 0 #efe;
+	border-color: #aba;
+	width: 400px;
+}
+#game_list table td {
+	border-color: #ded;
+}
+#players {
+	float: right;
+	width: 350px;
 }
 #game_create_form {
 	padding-top: 0.3em;

@@ -9,7 +9,7 @@ $(document).ready(function () {
 
     var states = {
         initial: {show: ["#register_form"],
-            hide: ["#quit_form", "#games", "#my_game", "#game"],
+            hide: ["#quit_form", "#games", '#players', "#my_game", "#game"],
             change: function () {
                 var reg;
                 reg = $("#register_name");
@@ -17,14 +17,19 @@ $(document).ready(function () {
                 reg.val("Your name");
             }
             },
-        registered: {show: ["#quit_form", "#games", "#game_create_form"],
-            hide: ["#register_form", "#my_game", "#game"]
+        registered: {show: ["#quit_form", "#games", '#players', "#game_create_form"],
+            hide: ["#register_form", "#my_game", "#game"],
+            change: function() {
+                if (tupelo.list_timer === undefined) {
+                    tupelo.list_timer = setInterval(updateLists, 5000);
+                }
+            }
             },
         gameCreated: {show: ["#my_game"],
             hide: ["#game_create_form"]
             },
         inGame: {show: ["#game"],
-            hide: ["#games", "#my_game"]
+            hide: ["#games", '#players', "#my_game"]
             }
     };
 
@@ -118,6 +123,28 @@ $(document).ready(function () {
         dbg();
     }
 
+    function listPlayersOk(result) {
+        //T.log("listPlayersOk");
+        T.log(result);
+        var html = "", player, plr, cls;
+        for (player in result) {
+            if (result.hasOwnProperty(player)) {
+                plr = new T.Player().fromObj(result[player]);
+                if (plr.id !== tupelo.player.id) {
+                    if (plr.game_id !== undefined) {
+                        cls = 'class="in_game" ';
+                    } else {
+                        cls = '';
+                    }
+                    html += "<tr " + cls + "id=\"player_id_" + plr.id + "\">";
+                    html += "<td>" + escapeHtml(plr.player_name) + "</td></tr>";
+                }
+            }
+        }
+        $("#player_list table tbody").html(html);
+        dbg();
+    }
+
     function registerOk(result) {
         $("#name").val("");
         tupelo.player.id = result.player_id;
@@ -127,10 +154,8 @@ $(document).ready(function () {
         // clear game list if there was one previously
         $("#game_list table tbody").html("");
         $(".my_name").html(escapeHtml(tupelo.player.player_name));
+        updateLists();
         setState("registered", "fast");
-        listGames();
-        T.log("creating timer");
-        tupelo.game_list_timer = new T.Timer("/ajax/game/list", 5000, listGamesOk);
         T.log("timer created");
     }
 
@@ -152,18 +177,15 @@ $(document).ready(function () {
     function leaveOk(result) {
         leftGame();
         dbg();
-        listGames();
+        updateLists();
         setState("registered", "fast");
-        if (tupelo.game_list_timer === undefined) {
-            tupelo.game_list_timer = new T.Timer("/ajax/game/list", 5000, listGamesOk);
-        }
     }
 
     function quitOk(result) {
         leftGame();
-        if (tupelo.game_list_timer !== undefined) {
-            tupelo.game_list_timer.disable();
-            tupelo.game_list_timer = undefined;
+        if (tupelo.list_timer !== undefined) {
+            clearInterval(tupelo.list_timer);
+            tupelo.list_timer = undefined;
         }
         tupelo.player = undefined;
         T.log(tupelo);
@@ -177,7 +199,7 @@ $(document).ready(function () {
         dbg();
         $("p#joined_game").html("joined game " + tupelo.game_id);
         setState("gameCreated", "fast");
-        listGames();
+        updateLists();
     }
 
     function cardPlayed(event) {
@@ -430,9 +452,9 @@ $(document).ready(function () {
     }
 
     function startOk(result) {
-        if (tupelo.game_list_timer !== undefined) {
-            tupelo.game_list_timer.disable();
-            tupelo.game_list_timer = undefined;
+        if (tupelo.list_timer !== undefined) {
+            clearInterval(tupelo.list_timer);
+            tupelo.list_timer = undefined;
         }
         $("#event_log").html("");
         setState("inGame");
@@ -444,9 +466,12 @@ $(document).ready(function () {
         dbg();
     }
 
-    function listGames() {
+    function updateLists() {
         $.ajax({url: "/ajax/game/list",
             success: listGamesOk, error: ajaxErr});
+        $.ajax({url: "/ajax/player/list",
+            success: listPlayersOk, error: ajaxErr,
+            data: {akey: tupelo.player.akey}});
     }
 
     $("#echo_ajax").click(function () {
