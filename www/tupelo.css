@@ -64,18 +64,16 @@ a.selectable {
 	font-family: serif;
 }
 .box_heading {
-	margin: 0 0 0 -3px;
-	border-radius: 5px 5px 0 0;
-	padding: 9px 5px 9px 5px;
-}
-h3.box_heading {
 	font-size: 1.1em;
+	margin: 0 -3px 0 -3px;
+	border-radius: 5px 5px 0 0;
+	-webkit-border-radius: 5px 5px 0 0;
+	-moz-border-radius: 5px 5px 0 0;
+	padding: 7px 5px 7px 5px;
+	background: none repeat scroll 0 0 #dde8dd;
 }
 .game_list_actions {
 	text-align: right;
-}
-#games .box_heading, #players .box_heading {
-	background: none repeat scroll 0 0 #ded;
 }
 .in_game {
 	color: #999;
@@ -83,7 +81,6 @@ h3.box_heading {
 #my_game {
 	clear: left;
 }
-
 #header, #main_content {
 	width: 800px;
 	margin: 0 auto 0 auto;
@@ -95,15 +92,14 @@ h3.box_heading {
 	float: right;
 }
 .listbox {
-	background: none repeat scroll 0 0 #efe;
+	background: none repeat scroll 0 0 #f0f8f0;
 	border: 1px solid #aba;
-	border-radius: 5px 5px 5px 5px;
+	border-radius: 5px;
 	-webkit-border-radius: 5px;
 	-moz-border-radius: 5px;
-	margin-top: 0.5em;
-	padding-left: 3px;
-	padding-bottom: 0.5em;
-	width: 400px;
+	margin-top: 8px;
+	margin-bottom: 8px;
+	padding: 0 3px 3px 3px;
 }
 .listbox table {
 	width: 100%;
@@ -117,7 +113,6 @@ h3.box_heading {
 }
 #games {
 	float: left;
-	background: none repeat scroll 0 0 #efe;
 	border-color: #aba;
 	width: 400px;
 }
@@ -129,7 +124,8 @@ h3.box_heading {
 	width: 350px;
 }
 #game_create_form {
-	padding-top: 0.3em;
+	margin-top: 5px;
+	margin-bottom: 5px;
 }
 #game_status {
 	margin-bottom: 1em;
@@ -148,7 +144,7 @@ h3.box_heading {
 }
 #game_area {
 	float: left;
-	margin-bottom: 2em;
+	margin-bottom: 1em;
 }
 #game_area td {
 	height: 3em;
@@ -179,12 +175,13 @@ h3.box_heading {
 	right: 0;
 	*/
 	float: right;
-	margin-bottom: 2em;
 }
-#events h4 {
-	margin-top: 0;
+#event_log {
+	border: 1px solid #aba;
+	margin: 5px 2px 2px 2px;
+	color: #565;
 }
 #hand {
 	clear: left;
-	margin-top: 2em;
+	padding: 10px 0px 10px 0px;
 }
