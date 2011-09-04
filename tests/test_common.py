@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # vim: set sts=4 sw=4 et:
 
 import unittest
 from tupelo import rpc
 from tupelo import common
-from tupelo.common import Card, CardSet
+from tupelo.common import Card, CardSet, smart_unicode, smart_str, TupeloException
 import copy
 
 class TestCommon(unittest.TestCase):
@@ -91,6 +92,26 @@ class TestCommon(unittest.TestCase):
         suuid2 = common.short_uuid()
         self.assertNotEqual(suuid, suuid2)
 
+    def testSmartUnicode(self):
+        self.assertEqual(smart_unicode('hello'), u'hello')
+        self.assertEqual(smart_unicode(u'hello'), u'hello')
+        self.assertEqual(smart_unicode('hellö'), u'hell\u00F6')
+        self.assertEqual(smart_unicode(u'hell\u00F6'), u'hell\u00F6')
+        self.assertEqual(smart_unicode(1), u'1')
+        self.assertEqual(smart_unicode(u'\u2665'), u'\u2665')
+        self.assertEqual(smart_unicode(TupeloException(u'hell\u00F6')), u'hell\u00F6')
+        self.assertEqual(smart_unicode(TupeloException('hellö')), u'hell\u00F6')
+
+    def testSmartStr(self):
+        self.assertEqual(smart_str('hello'), 'hello')
+        self.assertEqual(smart_str(u'hello'), 'hello')
+        self.assertEqual(smart_str('hellö'), 'hellö')
+        self.assertEqual(smart_str(u'hell\u00F6'), 'hellö')
+        self.assertEqual(smart_str(1), '1')
+        self.assertEqual(smart_str(u'\u2665'), '\xe2\x99\xa5')
+        self.assertRaises(UnicodeEncodeError, lambda: smart_str(u'hellö', 'ascii'))
+        self.assertEqual(smart_str(TupeloException(u'hellö')), 'hellö')
+        self.assertEqual(smart_str(TupeloException('hellö')), 'hellö')
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,12 +6,34 @@ import copy
 import rpc
 import uuid
 import base64
+import types
 
 # game mode
 NOLO = 0
 RAMI = 1
 
 TURN_NONE = -1
+
+def smart_unicode(s, encoding='utf-8'):
+    """
+    Convert some object to unicode.
+    """
+    if type(s) in (unicode, int, long, float, types.NoneType):
+        return unicode(s)
+
+    if isinstance(s, str):
+        return s.decode(encoding)
+
+    return unicode(s)
+
+def smart_str(s, encoding='utf-8'):
+    """
+    Convert some object to bytestring.
+    """
+    if isinstance(s, unicode):
+        return s.encode(encoding)
+
+    return str(s)
 
 def simple_decorator(decorator):
     """This decorator can be used to turn simple functions
@@ -56,21 +78,44 @@ def short_uuid():
     """
     return base64.urlsafe_b64encode(uuid.uuid4().get_bytes()).replace('=', '')
 
-class GameError(Exception):
+
+class StrAndUnicode(object):
+    """
+    A class whose __str__ returns its __unicode__ as a UTF-8 bytestring.
+    """
+    def __str__(self):
+        """
+        Get the 'unofficial' string representation.
+        """
+        return self.__unicode__().encode('utf-8')
+
+
+class TupeloException(StrAndUnicode, Exception):
+    """
+    Base class for new exceptions.
+    """
+    def __init__(self, message=None):
+        self.message = message
+
+    def __unicode__(self):
+        return smart_unicode(self.message)
+
+
+class GameError(TupeloException):
     """
     Generic error class for game errors.
     """
     rpc_code = 1
 
 
-class RuleError(Exception):
+class RuleError(TupeloException):
     """
     Error for breaking the game rules.
     """
     rpc_code = 2
 
 
-class ProtocolError(Exception):
+class ProtocolError(TupeloException):
     """
     Error for problems in using the RPC protocol.
     """
@@ -123,7 +168,7 @@ def _get_suit(value):
 
     return None
         
-class Card(rpc.RPCSerializable):
+class Card(rpc.RPCSerializable, StrAndUnicode):
     """
     Class that represents a single card.
     """
@@ -163,12 +208,6 @@ class Card(rpc.RPCSerializable):
         Get the 'official string representation of the object.
         """
         return '<Card: %s of %s>' % (self.value, self.suit.name)
-
-    def __str__(self):
-        """
-        Get the 'unofficial' string representation.
-        """
-        return self.__unicode__().encode('utf-8')
 
     def __unicode__(self):
         """
