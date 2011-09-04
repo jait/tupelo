@@ -73,6 +73,8 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
             response = json.dumps(response_obj)
             self.send_header("Content-type", "application/json")
             self.send_header("Content-length", str(len(response)))
+            self.send_header("X-Error-Code", str(err.rpc_code))
+            self.send_header("X-Error-Message", str(err))
             self.end_headers()
 
             self.wfile.write(response)
