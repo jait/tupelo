@@ -3,7 +3,7 @@
 
 import players
 import rpc
-from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState
+from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState, smart_unicode
 from game import GameController
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 import sys
@@ -21,6 +21,10 @@ try:
     from urlparse import parse_qs
 except:
     from cgi import parse_qs
+try:
+    from email.header import Header
+except:
+    from email import Header
 
 
 DEFAULT_PORT = 8052
@@ -69,6 +73,17 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
     Custom request handler class to support ajax/json RPC for GET requests and XML-RPC for POST.
     """
 
+    def encode_header(self, value):
+        """
+        Encode an HTTP header value. Try first natively in ISO-8859-1, then
+        UTF-8 encoded quoted string.
+        """
+        try:
+            return smart_unicode(value).encode('iso-8859-1')
+        except UnicodeEncodeError:
+            header = Header(smart_unicode(value), 'utf-8')
+            return header.encode()
+
     @traced
     def do_GET(self):
         try:
@@ -85,7 +100,7 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
             self.send_header("Content-type", "application/json")
             self.send_header("Content-length", str(len(response)))
             self.send_header("X-Error-Code", str(err.rpc_code))
-            self.send_header("X-Error-Message", str(err))
+            self.send_header("X-Error-Message", self.encode_header(err))
             self.end_headers()
 
             self.wfile.write(response)
