@@ -15,6 +15,7 @@ import traceback
 import inspect
 import json
 import urlparse
+import Cookie
 try:
     from urlparse import parse_qs
 except:
@@ -61,7 +62,7 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
     @traced
     def do_GET(self):
         try:
-            response = self.server.json_dispatch(self.path)
+            response = self.server.json_dispatch(self.path, self.headers)
         except ProtocolError, err:
             self.report_404()
             return
@@ -107,6 +108,18 @@ class TupeloJSONDispatcher(object):
 
     json_path_prefix = '/ajax/'
 
+    def _json_parse_headers(self, headers):
+        """
+        Parse the HTTP headers and extract any params from them.
+        """
+        params = {}
+        # we support just 'akey' cookie
+        cookie = Cookie.SimpleCookie(headers.get('Cookie'))
+        if cookie.has_key('akey'):
+            params['akey'] = cookie['akey'].value
+
+        return params
+
     def _json_parse_qstring(self, qstring):
         """
         Parse a query string into method and parameters.
@@ -134,13 +147,17 @@ class TupeloJSONDispatcher(object):
 
         return (method, params)
 
-    def json_dispatch(self, qstring):
+    def json_dispatch(self, qstring, headers):
         """
         Dispatch a JSON method call to the interface instance.
         """
-        method, params = self._json_parse_qstring(qstring)
+        method, qs_params = self._json_parse_qstring(qstring)
         if not method:
             raise ProtocolError('No such method')
+
+        # the querystring params override header params
+        params = self._json_parse_headers(headers)
+        params.update(qs_params)
 
         # ugly. here we are relying on the existence of
         # "instance" member from SimpleXMLRPCDispatcher
