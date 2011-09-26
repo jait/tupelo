@@ -19,22 +19,31 @@ class TestTupeloRPCInterface(unittest.TestCase):
         iface = I()
         encoded = self._encoded_player()
         p_data = iface.player_register(encoded)
-        self.assert_(isinstance(p_data['player_id'], basestring))
+        self.assert_(isinstance(p_data['id'], basestring))
         self.assert_(isinstance(p_data['akey'], basestring))
         plr = iface._ensure_auth(p_data['akey'])
-        self.assertEqual(plr.id, p_data['player_id'])
+        self.assertEqual(plr.id, p_data['id'])
         # list players
         players_raw = iface.player_list(p_data['akey'])
         self.assert_(isinstance(players_raw, list))
         players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
         me = None
         for pl in players:
-            if pl.id == p_data['player_id']:
+            if pl.id == p_data['id']:
                 me = pl
                 break
         self.assert_(me is not None)
         self.assertEqual(me.player_name, encoded['player_name'])
         iface._clear_auth()
+
+    def testHelloEmpty(self):
+        iface = I()
+        hello = iface.hello()
+        self.assert_(isinstance(hello, dict))
+        self.assert_(hello.has_key('version'))
+        self.assert_(isinstance(hello['version'], basestring))
+        self.assertFalse(hello.has_key('player'))
+        self.assertFalse(hello.has_key('game'))
 
     def testGame(self):
         iface = I()
@@ -53,7 +62,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
         self.assert_(isinstance(players_raw, list))
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
-        self.assert_(p_data['player_id'] in [pl.id for pl in players])
+        self.assert_(p_data['id'] in [pl.id for pl in players])
         # get_info
         info = iface.game_get_info(g_id)
         self.assert_(info == players_raw)
@@ -89,7 +98,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players]
         for p_data in p_datas:
-            self.assert_(p_data['player_id'] in [pl.id for pl in players])
+            self.assert_(p_data['id'] in [pl.id for pl in players])
 
         state = iface.game_get_state(p_datas[0]['akey'], g_id)
         self.assert_(state.has_key('game_state'))

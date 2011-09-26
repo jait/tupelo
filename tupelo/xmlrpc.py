@@ -125,7 +125,7 @@ class XMLRPCProxyController(object):
     def register_player(self, player):
         player.controller = self
         plr_data = self.server.player.register(rpc.rpc_encode(player))
-        player.id = plr_data['player_id']
+        player.id = plr_data['id']
         self.akey = plr_data['akey']
 
     @fault2error

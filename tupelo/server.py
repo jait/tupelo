@@ -24,6 +24,9 @@ except:
 
 DEFAULT_PORT = 8052
 
+VERSION_MAJOR = 0
+VERSION_MINOR = 1
+VERSION_STRING = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
 
 @simple_decorator
 def authenticated(fn):
@@ -237,7 +240,8 @@ class TupeloRPCInterface(object):
         player.id = short_uuid()
         player.akey = short_uuid()
         self.players.append(player)
-        return {'player_id': player.id, 'akey': player.akey}
+        #return {'player_id': player.id, 'akey': player.akey}
+        return player.rpc_encode(private=True)
 
     def _ensure_auth(self, akey):
         """
@@ -299,6 +303,25 @@ class TupeloRPCInterface(object):
                 raise ProtocolError(str(err))
 
         raise ProtocolError('Method "%s" is not supported' % method)
+
+    ### PUBLIC METHODS
+
+    def hello(self, akey=None):
+        response = {'version': VERSION_STRING}
+        try:
+            self._ensure_auth(akey)
+        except:
+            pass
+
+        # is the akey valid?
+        if self.authenticated_player is not None:
+            plr = self.authenticated_player
+            response['player'] = plr.rpc_encode(private=True)
+            if plr.game:
+                response['game'] = _game_get_rpc_info(plr.game)
+
+        self._clear_auth()
+        return response
 
     def player_register(self, player):
         """
@@ -463,11 +486,15 @@ class RPCProxyPlayer(players.Player):
         self.events = Queue.Queue()
         self.game = None
 
-    def rpc_encode(self):
+    def rpc_encode(self, private=False):
         rpcobj = players.Player.rpc_encode(self)
         # don't encode the game object, just the ID
         if self.game:
             rpcobj['game_id'] = rpc.rpc_encode(self.game.id)
+
+        if private:
+            if hasattr(self, 'akey'):
+                rpcobj['akey'] = self.akey
 
         return rpcobj
 
