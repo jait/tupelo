@@ -384,7 +384,12 @@ class TupeloRPCInterface(object):
         # TODO: slight chance of race
         self.games.append(game)
         game.id = short_uuid()
-        self.game_enter(self.authenticated_player.akey, game.id)
+        try:
+            self.game_enter(self.authenticated_player.akey, game.id)
+        except GameError:
+            self.games.remove(game)
+            raise
+
         return game.id
 
     @authenticated
