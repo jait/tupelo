@@ -73,6 +73,19 @@ $(document).ready(function () {
         return handled;
     }
 
+    function hello() {
+        $.ajax({url: "/ajax/hello",
+            success: function (result) {
+                T.log("Server version: " + result.version);
+                // are we already logged in?
+                if (result.player !== undefined) {
+                    tupelo.player = new T.Player(result.player.player_name);
+                    registerOk(result.player);
+                }
+            },
+            error: ajaxErr});
+    }
+
     function updateGameLinks(disabledIds) {
         var gameJoinClicked = function (event) {
             // "game_join_ID"
@@ -147,8 +160,9 @@ $(document).ready(function () {
 
     function registerOk(result) {
         $("#name").val("");
-        tupelo.player.id = result.player_id;
+        tupelo.player.id = result.id;
         tupelo.player.akey = result.akey;
+        $.cookie("akey", result.akey);
         T.log(tupelo);
         dbg();
         // clear game list if there was one previously
@@ -187,6 +201,7 @@ $(document).ready(function () {
             clearInterval(tupelo.list_timer);
             tupelo.list_timer = undefined;
         }
+        $.cookie("akey", null); // clear the cookie
         tupelo.player = undefined;
         T.log(tupelo);
         dbg();
@@ -551,5 +566,6 @@ $(document).ready(function () {
         $("#debug").hide();
     }
 
+    hello();
     setState("initial");
 });
