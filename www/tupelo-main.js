@@ -579,6 +579,19 @@ $(document).ready(function () {
         }
     });
 
+    // show a confirmation if the browser supports it
+    window.onbeforeunload = function (e) {
+        if (tupelo.game_id === undefined) {
+            return undefined; // no dialog
+        }
+        e = e || window.event;
+        msg = "By leaving the page you will also leave the game.";
+        if (e) {
+            e.returnValue = msg;
+        }
+        return msg;
+    };
+
     hello();
     setState("initial");
 });
