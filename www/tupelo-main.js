@@ -218,6 +218,8 @@ $(document).ready(function () {
         dbg();
         $("p#joined_game").html("joined game " + tupelo.game_id);
         setState("gameCreated", "fast");
+        tupelo.event_fetch_timer = new T.Timer("/ajax/get_events", 2000,
+            eventsOk, {data: {akey: tupelo.player.akey}});
         updateLists();
     }
 
@@ -382,7 +384,9 @@ $(document).ready(function () {
 
     function stateChanged(event) {
         T.log("stateChanged");
-        if (event.game_state.state == T.ONGOING) { // VOTING -> ONGOING
+        if (event.game_state.state == T.VOTING) { // game started!
+            startOk();
+        } else if (event.game_state.state == T.ONGOING) { // VOTING -> ONGOING
             // allow the user to clear the table and proceed by clicking the table
             $("#game_area table tbody").click(clearTable);
             // setting timeout to show the voted cards for a longer time
@@ -480,8 +484,6 @@ $(document).ready(function () {
         $.ajax({url: "/ajax/game/get_info",
             success: gameInfoOk, error: ajaxErr, data: {game_id: tupelo.game_id}});
         getGameState();
-        tupelo.event_fetch_timer = new T.Timer("/ajax/get_events", 2000,
-            eventsOk, {data: {akey: tupelo.player.akey}});
         dbg();
     }
 
