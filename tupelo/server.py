@@ -240,7 +240,6 @@ class TupeloRPCInterface(object):
         player.id = short_uuid()
         player.akey = short_uuid()
         self.players.append(player)
-        #return {'player_id': player.id, 'akey': player.akey}
         return player.rpc_encode(private=True)
 
     def _ensure_auth(self, akey):
@@ -307,6 +306,12 @@ class TupeloRPCInterface(object):
     ### PUBLIC METHODS
 
     def hello(self, akey=None):
+        """
+        Client says hello.
+
+        Return a dict with server version and player/game info if the akey
+        was valid.
+        """
         response = {'version': VERSION_STRING}
         try:
             self._ensure_auth(akey)
