@@ -7,6 +7,7 @@ import rpc
 import uuid
 import base64
 import types
+from functools import wraps
 
 # game mode
 NOLO = 0
@@ -69,6 +70,24 @@ def traced(func):
         return retval
 
     return wrapper
+
+def synchronized_method(lock_name):
+    """
+    Simple synchronization decorator for methods.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            lock = self.__getattribute__(lock_name)
+            lock.acquire()
+            try:
+                return func(self, *args, **kwargs)
+            finally:
+                lock.release()
+
+        return wrapper
+
+    return decorator
 
 def short_uuid():
     """

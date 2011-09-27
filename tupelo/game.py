@@ -6,6 +6,7 @@ from common import CardSet
 from common import NOLO, RAMI
 from common import TURN_NONE
 from common import RuleError, GameError, GameState 
+from common import synchronized_method
 import players
 import threading
 import sys
@@ -23,6 +24,7 @@ class GameController(object):
         self.state = GameState()
         self.shutdown_event = threading.Event()
         self.id = None
+        self.lock_start = threading.Lock()
 
     def register_player(self, player):
         """
@@ -141,10 +143,14 @@ class GameController(object):
         for player in self.players:
             player.send_message('', msg)
 
+    @synchronized_method('lock_start')
     def start_game(self):
         """
         Start the game.
         """
+        if self.state.state != GameState.OPEN:
+            raise GameError('Game already started')
+
         if len(self.players) < 4:
             raise GameError('Not enough players')
         
