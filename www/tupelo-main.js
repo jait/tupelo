@@ -81,6 +81,10 @@ $(document).ready(function () {
                 if (result.player !== undefined) {
                     tupelo.player = new T.Player(result.player.player_name);
                     registerOk(result.player);
+                    // are we in a game?
+                    if (result.player.game_id !== undefined) {
+                        gameCreateOk(result.player.game_id);
+                    }
                 }
             },
             error: ajaxErr});
