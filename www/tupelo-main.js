@@ -572,6 +572,13 @@ $(document).ready(function () {
         $("#debug").hide();
     }
 
+    // leave the game when the user leaves the page
+    $(window).unload(function () {
+        if (tupelo.game_id !== undefined) {
+            $.ajax({url: "/ajax/game/leave", async: false, data: {akey: tupelo.player.akey, game_id: tupelo.game_id}});
+        }
+    });
+
     hello();
     setState("initial");
 });
