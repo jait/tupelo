@@ -6,7 +6,30 @@ import unittest
 from tupelo import rpc
 from tupelo import common
 from tupelo.common import Card, CardSet, smart_unicode, smart_str, TupeloException
+import threading
 import copy
+import time
+
+class SyncTester(object):
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.counter = 0
+
+    @common.synchronized_method('lock')
+    def sync(self):
+        assert self.counter == 0, 'oops, @synchronized_method did not work. '\
+            'counter is %d' % self.counter
+        self.counter += 1
+        time.sleep(1)
+        assert self.counter == 1, 'oops, @synchronized_method did not work. '\
+            'counter is %d' % self.counter
+        time.sleep(1)
+        self.counter -= 1
+        assert self.counter == 0, 'oops, @synchronized_method did not work. '\
+            'counter is %d' % self.counter
+        return True
+
 
 class TestCommon(unittest.TestCase):
 
@@ -112,6 +135,20 @@ class TestCommon(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, lambda: smart_str(u'hellö', 'ascii'))
         self.assertEqual(smart_str(TupeloException(u'hellö')), 'hellö')
         self.assertEqual(smart_str(TupeloException('hellö')), 'hellö')
+
+    def testSynchronizedMethod(self):
+        synctester = SyncTester()
+        def _runner():
+            synctester.sync()
+
+        threads = []
+        for i in xrange(4):
+            thread = threading.Thread(None, _runner)
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join(5.0)
 
 if __name__ == '__main__':
     unittest.main()
