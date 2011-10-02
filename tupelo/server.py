@@ -8,6 +8,7 @@ from game import GameController
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 import sys
 import copy
+import logging
 import Queue
 import SimpleXMLRPCServer
 import xmlrpc
@@ -27,6 +28,12 @@ DEFAULT_PORT = 8052
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
 VERSION_STRING = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
+
+def _log_exc(exception, level=logging.INFO):
+    """
+    Print the exception type and value string to log.
+    """
+    logging.log(level, "%s: %s", type(exception).__name__, str(exception))
 
 @simple_decorator
 def authenticated(fn):
@@ -70,7 +77,7 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
             self.report_404()
             return
         except (GameError, RuleError), err:
-            traceback.print_exception(*sys.exc_info())
+            _log_exc(err)
             self.send_response(403) # forbidden
             response_obj = {'code': err.rpc_code,
                 'message': str(err)}
@@ -87,6 +94,7 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
             self.connection.shutdown(1)
         except Exception, err:
             traceback.print_exception(*sys.exc_info())
+            _log_exc(err, logging.ERROR)
             self.send_response(500)
             self.end_headers()
         else:
@@ -549,5 +557,5 @@ class RPCProxyPlayer(players.Player):
         elif self.game_state.state == GameState.ONGOING:
             self.play_card()
         else:
-            print "Warning: unknown state %d" % self.game_state.state
+            logging.warning("Warning: unknown state %d", self.game_state.state)
 
