@@ -1,15 +1,14 @@
-### tupelo-main.coffee
+# tupelo-main.coffee
 # vim: sts=2 sw=2 et:
-###
 
 $ = jQuery
- 
+
 $(document).ready ->
   # status object
   tupelo =
     game_state: {}
     events: []
-  
+
   states =
     initial:
       show: [ "#register_form" ]
@@ -19,33 +18,36 @@ $(document).ready ->
         reg.addClass "initial"
         reg.val "Your name"
         return
-  
+
     registered:
       show: [ "#quit_form", "#games", "#players", "#game_create_form" ]
       hide: [ "#register_form", "#my_game", "#game" ]
       change: ->
-        tupelo.list_timer = setInterval(updateLists, 5000)  if tupelo.list_timer is `undefined`
-  
+        if not tupelo.list_timer?
+          tupelo.list_timer = setInterval(updateLists, 5000)
+
     gameCreated:
       show: [ "#my_game" ]
       hide: [ "#game_create_form" ]
-  
+
     inGame:
       show: [ "#game" ]
       hide: [ "#games", "#players", "#my_game" ]
-  
+
+  # change the current state
   setState = (state, effectDuration) ->
     st = states[state]
     $(elem).hide effectDuration for elem in st.hide
     $(elem).show effectDuration for elem in st.show
     st.change() if st.change?
-  
+
   escapeHtml = (str) ->
     str.replace("<", "&lt;").replace ">", "&gt;"
-  
+
   dbg = ->
     $("#debug").html JSON.stringify(tupelo) if T.debug
-  
+
+  # generic ajax error callback
   ajaxErr = (xhr, astatus, error) ->
     handled = false
     # 403 is for game and rule errors
@@ -59,7 +61,7 @@ $(document).ready ->
       T.log "status: " + astatus
       T.log "error: " + error
     handled
-  
+
   hello = ->
     $.ajax
       url: "/ajax/hello"
@@ -70,10 +72,10 @@ $(document).ready ->
           tupelo.player = new T.Player result.player.player_name
           registerOk result.player
           # are we in a game?
-          gameCreateOk result.player.game_id if result.player.game_id?
-  
+          if result.player.game_id?
+            gameCreateOk result.player.game_id
       error: ajaxErr
-  
+
   updateGameLinks = (disabledIds) ->
     gameJoinClicked = (event) ->
       # "game_join_ID"
@@ -84,39 +86,38 @@ $(document).ready ->
         data:
           akey: tupelo.player.akey
           game_id: game_id
-  
         success: gameCreateOk
         error: ajaxErr
-  
+
     if tupelo.game_id?
       $("button.game_join").attr "disabled", true
       $("tr#game_id_" + tupelo.game_id).addClass "highlight"
     else
       $("button#" + id).attr "disabled", true for id in disabledIds
       $("button.game_join").click gameJoinClicked
-  
+
   listGamesOk = (result) ->
     #T.log "listGamesOk"
     #T.log result
     html = ""
     disabledIds = []
     for own game_id of result
-      html += "<tr id=\"game_id_" + game_id + "\">"
+      html += "<tr id=\"game_id_#{game_id}\">"
       #players = []
       #for res in result[game_id]
       #  plr = new T.Player().fromObj res
       #  players.push plr.player_name
       players = (new T.Player().fromObj(res).player_name for res in result[game_id])
-  
+
       html += "<td>" + escapeHtml(players.join(", ")) + "</td>"
       html += "<td class=\"game_list_actions\"><button class=\"game_join btn\" id=\"game_join_" + game_id + "\"><span><span>join</span></span></button></td>"
       html += "</tr>"
-      disabledIds.push "game_join_" + game_id if players.length is 4
-  
+      disabledIds.push "game_join_#{game_id}" if players.length is 4
+
     $("#game_list table tbody").html html
     updateGameLinks disabledIds
     dbg()
-  
+
   listPlayersOk = (result) ->
     T.log result
     html = ""
@@ -124,12 +125,12 @@ $(document).ready ->
       plr = new T.Player().fromObj(result[player])
       if plr.id isnt tupelo.player.id
         cls = if plr.game_id? then "class=\"in_game\" " else ""
-        html += "<tr " + cls + "id=\"player_id_" + plr.id + "\">"
+        html += "<tr #{cls}id=\"player_id_" + plr.id + "\">"
         html += "<td>" + escapeHtml(plr.player_name) + "</td></tr>"
-  
+
     $("#player_list table tbody").html html
     dbg()
-  
+
   registerOk = (result) ->
     $("#name").val ""
     tupelo.player.id = result.id
@@ -143,16 +144,16 @@ $(document).ready ->
     updateLists()
     setState "registered", "fast"
     T.log "timer created"
-  
+
   leftGame = ->
     if tupelo.event_fetch_timer?
       tupelo.event_fetch_timer.disable()
       tupelo.event_fetch_timer = null
-  
+
     if tupelo.event_timer?
       clearTimeout tupelo.event_timer
       tupelo.event_timer = null
-  
+
     tupelo.game_id = null
     tupelo.game_state = {}
     tupelo.hand = null
@@ -176,12 +177,12 @@ $(document).ready ->
     T.log tupelo
     dbg()
     setState "initial", "fast"
- 
+
   gameCreateOk = (result) ->
     tupelo.game_id = result
     T.log tupelo
     dbg()
-    $("p#joined_game").html "joined game " + tupelo.game_id
+    $("p#joined_game").html "joined game #{tupelo.game_id}"
     setState "gameCreated", "fast"
     tupelo.event_fetch_timer = new T.Timer("/ajax/get_events", 2000, eventsOk,
       data:
@@ -248,7 +249,7 @@ $(document).ready ->
         statusStr = "NOLO"
       else statusStr = "RAMI" if state.mode is T.RAMI
 
-    statusStr = "<span>" + statusStr + "</span>"
+    statusStr = "<span>#{statusStr}</span>"
     statusStr += "<span>tricks: " + state.tricks[0] + " - " + state.tricks[1] + "</span>"
 
     if state.score?
@@ -294,11 +295,11 @@ $(document).ready ->
   updateHand = (newHand) ->
     html = ""
     hand = []
-    for item in newHand
+    for item, i in newHand
       card = new T.Card(item.suit, item.value)
       hand.push card
       html += "<a class=\"selectable\" href=\"#\">" if tupelo.my_turn
-      html += "<span class=\"card\" id=\"card_" + i + "\">" + card.toShortHtml() + "</span>"
+      html += "<span class=\"card\" id=\"card_#{i}\">" + card.toShortHtml() + "</span>"
       html += "</a>" if tupelo.my_turn
 
     tupelo.hand = hand
@@ -361,7 +362,8 @@ $(document).ready ->
       else
         T.log "unknown event " + event.type
 
-    tupelo.event_timer = setTimeout(processEvent, 0) if handled is true
+    if handled is true
+      tupelo.event_timer = setTimeout(processEvent, 0)
 
   eventsOk = (result) ->
     ###
@@ -373,7 +375,9 @@ $(document).ready ->
     # push events to queue
     tupelo.events.push event for event in result
 
-    tupelo.event_timer = setTimeout(processEvent, 0) if tupelo.events.length > 0 and tupelo.event_timer is `undefined`
+    if tupelo.events.length > 0 and not tupelo.event_timer?
+      tupelo.event_timer = setTimeout(processEvent, 0)
+
     dbg()
 
   gameInfoOk = (result) ->
@@ -425,18 +429,18 @@ $(document).ready ->
       data:
         akey: tupelo.player.akey
 
-$("#echo_ajax").click ->
-  text = $("#echo").val()
-  $.ajax
-    url: "/ajax/echo"
-    data:
-      test: text
+  # bind DOM events
 
-    success: (result) ->
-      $("#echo_result").html escapeHtml(result)
-      $("#echo").val ""
-
-    error: ajaxErr
+  $("#echo_ajax").click ->
+    text = $("#echo").val()
+    $.ajax
+      url: "/ajax/echo"
+      data:
+        test: text
+      success: (result) ->
+        $("#echo_result").html escapeHtml(result)
+        $("#echo").val ""
+      error: ajaxErr
 
   $("#register_btn").click ->
     input = $("#register_name")
@@ -444,13 +448,13 @@ $("#echo_ajax").click ->
     if not name or input.hasClass("initial")
       alert "Please enter your name first"
       return
+
     tupelo.player = new T.Player(name)
     T.log tupelo
     $.ajax
       url: "/ajax/player/register"
       data:
         player: JSON.stringify(tupelo.player)
-
       success: registerOk
       error: ajaxErr
 
@@ -468,10 +472,9 @@ $("#echo_ajax").click ->
       url: "/ajax/player/quit"
       data:
         akey: tupelo.player.akey
-
       success: quitOk
       error: (xhr, astatus, error) ->
-        quitOk()  if ajaxErr(xhr, astatus, error) is true
+        quitOk() if ajaxErr(xhr, astatus, error) is true
 
   $(".game_leave_btn").click ->
     # TODO: should we cancel timers already here?
@@ -480,10 +483,9 @@ $("#echo_ajax").click ->
       data:
         akey: tupelo.player.akey
         game_id: tupelo.game_id
-
       success: leaveOk
       error: (xhr, astatus, error) ->
-        leaveOk()  if ajaxErr(xhr, astatus, error) is true
+        leaveOk() if ajaxErr(xhr, astatus, error) is true
 
   $("#game_create_btn").click ->
     # TODO: should we cancel timers already here?
@@ -491,7 +493,6 @@ $("#echo_ajax").click ->
       url: "/ajax/game/create"
       data:
         akey: tupelo.player.akey
-
       success: gameCreateOk
       error: ajaxErr
 
@@ -501,7 +502,6 @@ $("#echo_ajax").click ->
       data:
         akey: tupelo.player.akey
         game_id: tupelo.game_id
-
       success: startOk
       error: ajaxErr
 
@@ -511,7 +511,6 @@ $("#echo_ajax").click ->
       data:
         akey: tupelo.player.akey
         game_id: tupelo.game_id
-
       success: startOk
       error: ajaxErr
 
@@ -533,13 +532,14 @@ $("#echo_ajax").click ->
 
   # show a confirmation if the browser supports it
   window.onbeforeunload = (e) ->
-    if tupelo.game_id is `undefined`
+    if not tupelo.game_id?
       return `undefined` # no dialog
     e = e or window.event
     msg = "By leaving the page you will also leave the game."
     e.returnValue = msg if e
     msg
 
+  # and finally, contact the server
   hello()
   setState "initial"
 
