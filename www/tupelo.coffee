@@ -59,20 +59,21 @@ T = ($) ->
     this
 
   # Player
-  my.Player = (name) ->
-    @player_name = name
+  class my.Player
+    constructor: (name) ->
+      @player_name = name
 
-  my.Player::fromJSON = (json) ->
-    obj = eval("(" + json + ")")
-    @fromObj obj
+    fromJSON: (json) ->
+      obj = eval("(" + json + ")")
+      @fromObj obj
 
-  my.Player::fromObj = (obj) ->
-    for prop of obj
-      this[prop] = obj[prop]
-    this
+    fromObj: (obj) ->
+      for prop of obj
+        this[prop] = obj[prop]
+      this
 
-  my.Player::toString = ->
-    "" + @player_name + " (" + @id + ")"
+    toString: ->
+      "" + @player_name + " (" + @id + ")"
 
   # Card
   suits = [
@@ -102,18 +103,19 @@ T = ($) ->
       else
         value + ""
 
-  my.Card = (suit, value) ->
-    @suit = suit
-    @value = value
+  class my.Card
+    constructor: (suit, value) ->
+      @suit = suit
+      @value = value
 
-  my.Card::toString = ->
-    "" + valueToChar(@value) + " of " + suits[@suit].name
+    toString: ->
+      "" + valueToChar(@value) + " of " + suits[@suit].name
 
-  my.Card::toShortString = ->
-    "" + valueToChar(@value) + suits[@suit].html
+    toShortString: ->
+      "" + valueToChar(@value) + suits[@suit].html
 
-  my.Card::toShortHtml = ->
-    "<span class=\"" + suits[@suit].name + "\">" + @toShortString() + "</span>"
+    toShortHtml: ->
+      "<span class=\"" + suits[@suit].name + "\">" + @toShortString() + "</span>"
 
   my
 
