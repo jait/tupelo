@@ -23,27 +23,25 @@ T.Timer = (url, interval, callback, params) ->
   @interval = interval
   @callback = callback
   @params = params # extra params for jQuery.ajax
-  # to make the object available in callback closures
-  me = this
 
-  ajaxCallback = (result) ->
-    me.callback result
-    me.setTimer()
+  ajaxCallback = (result) =>
+    @callback result
+    @setTimer()
 
-  ajaxError = (xhr, astatus, error) ->
+  ajaxError = (xhr, astatus, error) =>
     T.log "status: " + astatus
     T.log "error: " + error
-    me.disable()
+    @disable()
 
-  getData = ->
+  getData = =>
     params =
-      url: me.url
+      url: @url
       success: ajaxCallback
       error: ajaxError
 
     # set extra params
-    for own key of me.params
-      params[key] = me.params[key]
+    for own key of @params
+      params[key] = @params[key]
 
     $.ajax params
 
