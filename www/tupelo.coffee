@@ -77,37 +77,37 @@ class T.Player
     "" + @player_name + " (" + @id + ")"
 
 # Card
-suits = [
-  name: "spades"
-  html: "&#x2660;"
-,
-  name: "diamonds"
-  html: "&#x2666;"
-,
-  name: "clubs"
-  html: "&#x2663;"
-,
-  name: "hearts"
-  html: "&#x2665;"
-]
-
-valueToChar = (value) ->
-  switch value
-    when 11
-      "J"
-    when 12
-      "Q"
-    when 13
-      "K"
-    when 1, 14
-      "A"
-    else
-      value + ""
-
 class T.Card
   constructor: (suit, value) ->
     @suit = suit
     @value = value
+
+  suits = [
+    name: "spades"
+    html: "&#x2660;"
+  ,
+    name: "diamonds"
+    html: "&#x2666;"
+  ,
+    name: "clubs"
+    html: "&#x2663;"
+  ,
+    name: "hearts"
+    html: "&#x2665;"
+  ]
+
+  valueToChar = (value) ->
+    switch value
+      when 11
+        "J"
+      when 12
+        "Q"
+      when 13
+        "K"
+      when 1, 14
+        "A"
+      else
+        value + ""
 
   toString: ->
     "" + valueToChar(@value) + " of " + suits[@suit].name
