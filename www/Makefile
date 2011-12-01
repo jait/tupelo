@@ -1,4 +1,4 @@
-all: tupelo-main.js
+all: tupelo-main.js tupelo.js
 
 %.js : %.coffee
 	coffee -c $< 
