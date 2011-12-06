@@ -1,11 +1,14 @@
-JSTARGETS = tupelo-main.js tupelo.js
+TARGETS = tupelo-main.js tupelo.js tupelo.css
 
 .PHONY: all clean
 
-all: $(JSTARGETS)
+all: $(TARGETS)
 
 %.js : %.coffee
 	coffee -c $<
 
+%.css : %.less
+	lessc $< > $@
+
 clean:
-	rm -rf $(JSTARGETS)
+	rm -rf $(TARGETS)
