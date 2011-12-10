@@ -76,9 +76,7 @@ class T.Player
 
 # Card
 class T.Card
-  constructor: (suit, value) ->
-    @suit = suit
-    @value = value
+  constructor: (@suit, @value) ->
 
   suits = [
     name: "spades"
