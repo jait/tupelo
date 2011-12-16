@@ -121,7 +121,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
                 self.assertEqual(ret, True)
 
         finally:
-            for game in iface.games:
+            for game in iface.games.all():
                 game._reset()
 
 
