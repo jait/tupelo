@@ -25,8 +25,20 @@ class BaseField(object):
             return None
 
     def __set__(self, instance, value):
+        if value is not None:
+            self.validate(value)
+
         instance._data[id(self)] = value
-    
+
+    def validate(self, value):
+        pass
+
+
+class StringField(BaseField):
+    def validate(self, value):
+        if not isinstance(value, basestring):
+            raise TypeError('Value must be a string')
+
 class ResultSet(list):
     pass
 

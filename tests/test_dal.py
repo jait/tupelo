@@ -74,12 +74,12 @@ class TestModels(unittest.TestCase):
 class TestFields(unittest.TestCase):
 
     def testBaseField(self):
-        class Foo(dal.Document):
+        class Doc(dal.Document):
             f1 = dal.BaseField()
             f2 = dal.BaseField()
 
-        foo1 = Foo()
-        foo2 = Foo()
+        foo1 = Doc()
+        foo2 = Doc()
         self.assertEqual(foo1.f1, None)
 
         foo1.f1 = 41 
@@ -95,5 +95,18 @@ class TestFields(unittest.TestCase):
 
         foo1.f1 = None
         self.assertEqual(foo1.f1, None)
-        self.assert_(isinstance(Foo.f1, dal.BaseField))
+        self.assert_(isinstance(Doc.f1, dal.BaseField))
 
+    def testStringField(self):
+        class Doc(dal.Document):
+            s = dal.StringField()
+
+        doc = Doc()
+        self.assertEqual(doc.s, None)
+        doc.s = 'hilipati'
+        self.assertEqual(doc.s, 'hilipati')
+        self.assertRaises(TypeError, setattr, doc, 's', 1)
+        self.assertRaises(TypeError, setattr, doc, 's', ['string'])
+        self.assertEqual(doc.s, 'hilipati')
+        doc.s = None
+        self.assertEqual(doc.s, None)
