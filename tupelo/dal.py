@@ -1,7 +1,29 @@
 #!/usr/bin/env python
 # vim: set sts=4 sw=4 et:
 
+class Document(object):
+    """
+    Base class for DAL documents.
+    """
+    def __init__(self):
+        self._data = {}
 
+class BaseField(object):
+    def __init__(self):
+        self._value = None
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+
+        try:        
+            return instance._data[id(self)]
+        except (AttributeError, KeyError):
+            return None
+
+    def __set__(self, instance, value):
+        instance._data[id(self)] = value
+    
 class ResultSet(list):
     pass
 

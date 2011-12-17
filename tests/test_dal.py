@@ -3,8 +3,7 @@
 # vim: set sts=4 sw=4 et:
 
 import unittest
-import types
-from tupelo import models
+from tupelo import dal
 
 class TestObj(object):
     def __init__(self, foo=None, bar=None):
@@ -14,13 +13,13 @@ class TestObj(object):
 class TestModels(unittest.TestCase):
 
     def testManagerEmpty(self):
-        m = models.Manager()
+        m = dal.Manager()
         self.assertEqual(m.get(), None)
         for obj in m.all():
             self.assert_(False)
 
     def testManager(self):
-        m = models.Manager()
+        m = dal.Manager()
         res = m.all()
         self.assertEqual(len(res), 0)
         o1 = TestObj(foo=1)
@@ -35,7 +34,7 @@ class TestModels(unittest.TestCase):
         self.assert_(o2 in res)
 
     def testManagerRemove(self):
-        m = models.Manager()
+        m = dal.Manager()
         o1 = TestObj(foo=1)
         o2 = TestObj(foo=2, bar=3)
         m.append(o1)
@@ -47,7 +46,7 @@ class TestModels(unittest.TestCase):
         self.assertEqual(len(m.objects), 0)
 
     def testManagerFilter(self):
-        m = models.Manager()
+        m = dal.Manager()
         o1 = TestObj(foo=1)
         o2 = TestObj(foo=1, bar=3)
         m.append(o1)
@@ -63,11 +62,38 @@ class TestModels(unittest.TestCase):
         self.assertEqual(len(res), 0)
 
     def testManagerIter(self):
-        m = models.Manager()
+        m = dal.Manager()
         o1 = TestObj(foo=1)
         o2 = TestObj(foo=1, bar=3)
         orig = [o1, o2]
         for obj in m:
             self.assert_(obj in orig)
             orig.remove(obj)
+
+
+class TestFields(unittest.TestCase):
+
+    def testBaseField(self):
+        class Foo(dal.Document):
+            f1 = dal.BaseField()
+            f2 = dal.BaseField()
+
+        foo1 = Foo()
+        foo2 = Foo()
+        self.assertEqual(foo1.f1, None)
+
+        foo1.f1 = 41 
+        foo1.f2 = 42 
+        self.assertEqual(foo1.f1, 41)
+        self.assert_(isinstance(foo1.f1, int))
+        self.assertEqual(foo1.f2, 42)
+        self.assertEqual(foo2.f1, None)
+
+        foo2.f1 = 'something different' 
+        self.assertEqual(foo2.f1, 'something different')
+        self.assert_(isinstance(foo2.f1, basestring))
+
+        foo1.f1 = None
+        self.assertEqual(foo1.f1, None)
+        self.assert_(isinstance(Foo.f1, dal.BaseField))
 
