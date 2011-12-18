@@ -4,20 +4,27 @@
 DRIVER = 'ram'
 
 class DriverFactory(object):
+    """
+    Factory for creating database Driver instances.
+    TODO: should Driver be singleton instead of this registry hack?
+    """
     _drivers =  {}
 
     @classmethod
-    def get(cls, kind=DRIVER):
-        if cls._drivers.has_key(kind):
-            return cls._drivers[kind]
+    def get(cls, name=DRIVER):
+        if cls._drivers.has_key(name):
+            return cls._drivers[name]
         else:
+            # TODO: find the Driver subclass with the provided name
             driver = RamDriver()
-            cls._drivers[kind] = driver
+            cls._drivers[name] = driver
             return driver
 
 
 class Driver(object):
-
+    """
+    Base class for database drivers.
+    """
     def get_manager(self, cls):
         """
         Get a Manager object for a Document class.
@@ -28,7 +35,10 @@ class Driver(object):
 
 
 class RamDriver(Driver):
-    kind = 'ram'
+    """
+    Driver that uses RAM (process heap) for storage.
+    """
+    name = 'ram'
 
     def __init__(self):
         self._objects = {}
@@ -107,7 +117,10 @@ class RamDriver(Driver):
 
 
 class ManagerDescriptor(object):
-
+    """
+    Descriptor to dynamically get a Manager instance for the
+    enclosing class.
+    """
     def __get__(self, instance, owner):
         # check if owner class has _manager as its _own_ member
         if not owner.__dict__.has_key('_manager'):
@@ -181,6 +194,9 @@ class ResultSet(list):
 
 
 class Manager(object):
+    """
+    Object manager interface.
+    """
     def __init__(self, kind, driver):
         self.kind = kind
         self.driver = driver
@@ -200,7 +216,7 @@ class Manager(object):
         """
         Get all objects that match the query.
 
-        Returns a list.
+        Returns a ResultSet.
         """
         return self.driver.filter(self.kind, **kwargs)
 
