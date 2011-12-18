@@ -5,17 +5,23 @@ import threading
 from common import CardSet, SPADE, CLUB, HEART, DIAMOND
 from common import NOLO, RAMI
 from common import RuleError, UserQuit, GameState
+import dal
 import rpc
 
-class Player(rpc.RPCSerializable):
+class Player(rpc.RPCSerializable, dal.Document):
     """
     Base class for players.
     """
     rpc_attrs = ('id', 'player_name', 'team')
+    id = dal.StringField()
+    team = dal.IntegerField()
+    player_name = dal.StringField(allow_none=False)
+    hand = dal.BaseField()
 
     def __init__(self, name):
-        self.id = None
         rpc.RPCSerializable.__init__(self)
+        dal.Document.__init__(self)
+        self.id = None
         self.player_name = name
         self.hand = CardSet()
         self.team = 0

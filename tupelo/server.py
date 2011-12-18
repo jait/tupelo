@@ -12,6 +12,7 @@ import logging
 import Queue
 import SimpleXMLRPCServer
 import xmlrpc
+import dal
 import traceback
 import inspect
 import json
@@ -202,8 +203,8 @@ class TupeloRPCInterface(object):
 
     def __init__(self):
         super(TupeloRPCInterface, self).__init__()
-        self.players = []
-        self.games = []
+        self.players = players.Player.objects
+        self.games = GameController.objects
         self.methods = self._get_methods()
         self.authenticated_player = None
 
@@ -234,11 +235,11 @@ class TupeloRPCInterface(object):
         """
         Get player by id.
         """
-        for plr in self.players:
-            if plr.id == player_id:
-                return plr
+        plr = self.players.get(id=player_id)
+        if plr is None:
+            raise GameError('Player (ID %s) does not exist' % player_id)
 
-        raise GameError('Player (ID %s) does not exist' % player_id)
+        return plr
 
     def _register_player(self, player):
         """
@@ -256,12 +257,12 @@ class TupeloRPCInterface(object):
 
         Raises GameError if akey is not valid.
         """
-        for plr in self.players:
-            if plr.akey == akey:
-                self.authenticated_player = plr
-                return self.authenticated_player
+        plr = self.players.get(akey=akey)
+        if plr is None:
+            raise GameError("Invalid authentication key")
 
-        raise GameError("Invalid authentication key")
+        self.authenticated_player = plr
+        return self.authenticated_player
 
     def _clear_auth(self):
         """
@@ -273,11 +274,11 @@ class TupeloRPCInterface(object):
         """
         Get game by id or raise an error.
         """
-        for game in self.games:
-            if game.id == game_id:
-                return game
+        game = self.games.get(id=game_id)
+        if game is None:
+            raise GameError('Game %s does not exist' % game_id)
 
-        raise GameError('Game %s does not exist' % game_id)
+        return game
 
     def echo(self, test):
         return test
