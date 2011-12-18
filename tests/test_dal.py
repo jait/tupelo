@@ -10,16 +10,20 @@ class TestObj(object):
         self.foo = foo
         self.bar = bar
 
-class TestModels(unittest.TestCase):
+class TestDAL(unittest.TestCase):
 
     def testManagerEmpty(self):
-        m = dal.Manager()
+        class TestManagerEmpty(dal.Document):
+            pass
+
+        m = TestManagerEmpty.objects
         self.assertEqual(m.get(), None)
         for obj in m.all():
             self.assert_(False)
 
     def testManager(self):
-        m = dal.Manager()
+        m = dal.Document.objects
+        m.remove_all()
         res = m.all()
         self.assertEqual(len(res), 0)
         o1 = TestObj(foo=1)
@@ -32,21 +36,40 @@ class TestModels(unittest.TestCase):
         self.assertEqual(len(res), 2)
         self.assert_(o1 in res)
         self.assert_(o2 in res)
+        m.remove_all()
+        self.assertEqual(len(m.all()), 0)
+
+    def testManager2(self):
+        class Foo(dal.Document):
+            pass
+
+        class Bar(dal.Document):
+            pass
+
+        foo = Foo()
+        foo.save()
+        self.assertEqual(len(Foo.objects.all()), 1)
+        bar = Bar()
+        bar.save()
+        self.assertEqual(len(Bar.objects.all()), 1)
+        self.assertEqual(len(Foo.objects.all()), 1)
 
     def testManagerRemove(self):
-        m = dal.Manager()
+        m = dal.Document.objects
+        m.remove_all()
         o1 = TestObj(foo=1)
         o2 = TestObj(foo=2, bar=3)
         m.append(o1)
         m.append(o2)
         m.remove(o1)
-        self.assertEqual(len(m.objects), 1)
+        self.assertEqual(len(m.all()), 1)
         self.assertEqual(m.get(), o2)
         m.remove(m.get())
-        self.assertEqual(len(m.objects), 0)
+        self.assertEqual(len(m.all()), 0)
 
     def testManagerFilter(self):
-        m = dal.Manager()
+        m = dal.Document.objects
+        m.remove_all()
         o1 = TestObj(foo=1)
         o2 = TestObj(foo=1, bar=3)
         m.append(o1)
@@ -62,7 +85,8 @@ class TestModels(unittest.TestCase):
         self.assertEqual(len(res), 0)
 
     def testManagerIter(self):
-        m = dal.Manager()
+        m = dal.Document.objects
+        m.remove_all()
         o1 = TestObj(foo=1)
         o2 = TestObj(foo=1, bar=3)
         orig = [o1, o2]
@@ -130,3 +154,4 @@ class TestFields(unittest.TestCase):
         self.assertEqual(doc.i, 42)
         doc.i = None
         self.assertEqual(doc.i, None)
+
