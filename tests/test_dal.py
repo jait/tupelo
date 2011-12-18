@@ -115,3 +115,18 @@ class TestFields(unittest.TestCase):
         self.assertEqual(doc.s, 'hilipati')
         doc.s = None
         self.assertEqual(doc.s, None)
+
+    def testIntegerField(self):
+        class Doc(dal.Document):
+            i = dal.IntegerField()
+
+        doc = Doc()
+        self.assertEqual(doc.i, None)
+        doc.i = 42
+        self.assertEqual(doc.i, 42)
+        self.assertRaises(TypeError, setattr, doc, 'i', 'string')
+        self.assertRaises(TypeError, setattr, doc, 'i', [0])
+        self.assertRaises(TypeError, setattr, doc, 'i', 0.0)
+        self.assertEqual(doc.i, 42)
+        doc.i = None
+        self.assertEqual(doc.i, None)

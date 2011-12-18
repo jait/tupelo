@@ -48,8 +48,16 @@ class StringField(BaseField):
         if not isinstance(value, basestring):
             raise TypeError('Value must be a string')
 
+
+class IntegerField(BaseField):
+    def validate(self, value):
+        if not isinstance(value, int):
+            raise TypeError('Value must be an int')
+
+
 class ResultSet(list):
     pass
+
 
 class Manager(object):
     def __init__(self):
