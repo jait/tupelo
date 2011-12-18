@@ -15,6 +15,9 @@ class BaseField(object):
     Instances of this class (and its subclasses) can be
     attached to Document instances.
     """
+    def __init__(self, allow_none=True):
+        self.allow_none = allow_none
+
     def __get__(self, instance, owner):
         if instance is None:
             return self
@@ -25,12 +28,18 @@ class BaseField(object):
             return None
 
     def __set__(self, instance, value):
-        if value is not None:
+        if value is None:
+            if not self.allow_none:
+                raise TypeError("'None' is not allowed")
+        else:
             self.validate(value)
 
         instance._data[id(self)] = value
 
     def validate(self, value):
+        """
+        Validate the value for the field, if applicable.
+        """
         pass
 
 

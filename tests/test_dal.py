@@ -77,6 +77,7 @@ class TestFields(unittest.TestCase):
         class Doc(dal.Document):
             f1 = dal.BaseField()
             f2 = dal.BaseField()
+            f3 = dal.BaseField(allow_none=False)
 
         foo1 = Doc()
         foo2 = Doc()
@@ -96,6 +97,10 @@ class TestFields(unittest.TestCase):
         foo1.f1 = None
         self.assertEqual(foo1.f1, None)
         self.assert_(isinstance(Doc.f1, dal.BaseField))
+
+        foo1.f3 = 0
+        self.assertEqual(foo1.f3, 0)
+        self.assertRaises(TypeError, setattr, foo1, 'f3', None)
 
     def testStringField(self):
         class Doc(dal.Document):
