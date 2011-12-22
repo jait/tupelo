@@ -91,6 +91,15 @@ class RamDriver(Driver):
         """
         return self._filter(kind, kwargs)
 
+    def put(self, kind, obj):
+        """
+        Put (replace or append) and object to the store.
+        """
+        objects = self._get_objects(kind)
+        if not obj in objects:
+            return objects.append(obj)
+        # nothing to do otherwise
+
     def append(self, kind, obj):
         """
         Append an object to the store.
@@ -139,7 +148,7 @@ class Document(object):
         self._data = {}
 
     def save(self):
-        return self.objects.append(self)
+        return self.objects.put(self)
 
 
 class BaseField(object):
@@ -219,6 +228,12 @@ class Manager(object):
         Returns a ResultSet.
         """
         return self.driver.filter(self.kind, **kwargs)
+
+    def put(self, obj):
+        """
+        Put (replace or append) and object to the store.
+        """
+        return self.driver.put(self.kind, obj)
 
     def append(self, obj):
         """

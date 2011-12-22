@@ -51,6 +51,7 @@ class TestDAL(unittest.TestCase):
         self.assertEqual(len(Foo.objects.all()), 1)
         bar = Bar()
         bar.save()
+        bar.save() # double save
         self.assertEqual(len(Bar.objects.all()), 1)
         self.assertEqual(len(Foo.objects.all()), 1)
 
