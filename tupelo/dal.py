@@ -33,6 +33,58 @@ class Driver(object):
         manager = Manager(kind, self)
         return manager
 
+    def all(self, kind):
+        """
+        Get all objects of a kind in the store.
+        """
+        raise NotImplemented()
+
+    def get(self, kind, **kwargs):
+        """
+        Get exactly one object mathing the query.
+
+        Return None if there are no matches.
+        """
+        raise NotImplemented()
+
+    def filter(self, kind, **kwargs):
+        """
+        Get all objects that match the query.
+
+        Returns a list.
+        """
+        raise NotImplemented()
+
+    def put(self, kind, obj):
+        """
+        Put (replace or append) and object to the store.
+        """
+        raise NotImplemented()
+
+    def append(self, kind, obj):
+        """
+        Append an object to the store.
+        """
+        raise NotImplemented()
+
+    def remove(self, kind, obj):
+        """
+        Remove a certain object from the store.
+        """
+        raise NotImplemented()
+
+    def remove_all(self, kind):
+        """
+        Remove all objects of the certain kind.
+        """
+        raise NotImplemented()
+
+    def iterator(self, kind):
+        """
+        Return an iterator for all objects in the data store.
+        """
+        raise NotImplemented()
+
 
 class RamDriver(Driver):
     """
