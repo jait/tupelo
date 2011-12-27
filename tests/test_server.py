@@ -5,8 +5,56 @@
 import unittest
 import types
 from tupelo import rpc
-from tupelo.server import TupeloRPCInterface as I
+from tupelo.server import TupeloRPCInterface as I, TupeloJSONDispatcher as D
 from tupelo.players import Player
+
+class TestTupeloJSONDispatcher(unittest.TestCase):
+
+    def testPath2Method(self):
+        d = D()
+        self.assertEqual(d.json_path_prefix, '/ajax/') # default
+
+        d.json_path_prefix = '/a/'
+        self.assertEqual(d.path2method('/a/hello'), 'hello')
+        self.assertEqual(d.path2method('/a/hello/again'), 'hello_again')
+        self.assertEqual(d.path2method('/a/hello_again'), 'hello_again')
+        self.assertEqual(d.path2method('/hello/again'), None)
+
+        d.json_path_prefix = None
+        self.assertEqual(d.path2method('/hello'), 'hello')
+        self.assertEqual(d.path2method('hello'), 'hello')
+        self.assertEqual(d.path2method('/hello/there'), 'hello_there')
+        self.assertEqual(d.path2method('hello/again'), 'hello_again')
+
+    def testParseQString(self):
+        d = D()
+        d.json_path_prefix = None
+        f = d._json_parse_qstring
+        self.assertEqual(f('/hello'), ('hello', {}))
+        self.assertEqual(f('h?foo=bar'), ('h', {'foo': 'bar'}))
+        self.assertEqual(f('h?foo="bar"'), ('h', {'foo': 'bar'}))
+        self.assertEqual(f('h?a=1&b=3'), ('h', {'a': 1, 'b': 3}))
+        self.assertEqual(f('h?a={"a":1, "b":[0], "c":"s"}'), ('h', {'a': {'a':1, 'b':[0], 'c': 's'}}))
+
+    def testDispatch(self):
+        class MockInterface(object):
+            def __init__(self):
+                self.callstack = []
+
+            def _json_dispatch(self, method, params):
+                self.callstack.append((method, params))
+
+        mock = MockInterface()
+        d = D()
+        d.json_path_prefix = '/a/'
+        d.register_instance(mock)
+        d.json_dispatch('/a/hello', {})
+        self.assertEqual(mock.callstack.pop(), ('hello', {}))
+        d.json_dispatch('/a/h?a=1&b=2', {})
+        self.assertEqual(mock.callstack.pop(), ('h', {'a':1, 'b':2}))
+        d.json_dispatch('/a/h?a=1&b=2', {'Cookie': 'akey=b0_S6cNZRFmejfPXV2q6eA'})
+        self.assertEqual(mock.callstack.pop(), ('h', {'a':1, 'b':2, 'akey': 'b0_S6cNZRFmejfPXV2q6eA'}))
+
 
 class TestTupeloRPCInterface(unittest.TestCase):
 
