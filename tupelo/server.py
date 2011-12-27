@@ -3,7 +3,8 @@
 
 import players
 import rpc
-from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState
+from common import Card, GameError, RuleError, ProtocolError, GameState
+from utils import simple_decorator, traced, short_uuid
 from game import GameController
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 import sys

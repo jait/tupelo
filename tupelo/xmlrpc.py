@@ -5,7 +5,8 @@ import time
 import xmlrpclib
 import players
 import rpc
-from common import GameState, CardSet, GameError, RuleError, ProtocolError, simple_decorator
+from common import GameState, CardSet, GameError, RuleError, ProtocolError
+from utils import simple_decorator
 from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 
 @simple_decorator

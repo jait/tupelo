@@ -4,10 +4,7 @@
 import random
 import copy
 import rpc
-import uuid
-import base64
 import types
-from functools import wraps
 
 # game mode
 NOLO = 0
@@ -35,67 +32,6 @@ def smart_str(s, encoding='utf-8'):
         return s.encode(encoding)
 
     return str(s)
-
-def simple_decorator(decorator):
-    """This decorator can be used to turn simple functions
-    into well-behaved decorators, so long as the decorators
-    are fairly simple. If a decorator expects a function and
-    returns a function (no descriptors), and if it doesn't
-    modify function attributes or docstring, then it is
-    eligible to use this. Simply apply @simple_decorator to
-    your decorator and it will automatically preserve the
-    docstring and function attributes of functions to which
-    it is applied."""
-    def new_decorator(func):
-        decf = decorator(func)
-        decf.__name__ = func.__name__
-        decf.__doc__ = func.__doc__
-        decf.__dict__.update(func.__dict__)
-        return decf
-    # Now a few lines needed to make simple_decorator itself
-    # be a well-behaved decorator.
-    new_decorator.__name__ = decorator.__name__
-    new_decorator.__doc__ = decorator.__doc__
-    new_decorator.__dict__.update(decorator.__dict__)
-    return new_decorator
-
-@simple_decorator
-def traced(func):
-    """
-    A decorator for tracing func calls.
-    """
-    def wrapper(*args, **kwargs):
-        print "DEBUG: entering %s()" % func.__name__
-        retval = func(*args, **kwargs)
-        return retval
-
-    return wrapper
-
-def synchronized_method(lock_name):
-    """
-    Simple synchronization decorator for methods.
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            lock = self.__getattribute__(lock_name)
-            lock.acquire()
-            try:
-                return func(self, *args, **kwargs)
-            finally:
-                lock.release()
-
-        return wrapper
-
-    return decorator
-
-def short_uuid():
-    """
-    Generate a short, random unique ID.
-
-    Returns a string (base64 encoded UUID).
-    """
-    return base64.urlsafe_b64encode(uuid.uuid4().get_bytes()).replace('=', '')
 
 
 class StrAndUnicode(object):

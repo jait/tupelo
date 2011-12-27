@@ -6,7 +6,7 @@ from common import CardSet
 from common import NOLO, RAMI
 from common import TURN_NONE
 from common import RuleError, GameError, GameState 
-from common import synchronized_method
+from utils import synchronized_method
 import dal
 import players
 import threading
