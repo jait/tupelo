@@ -132,6 +132,17 @@ class TupeloJSONDispatcher(object):
 
         return params
 
+    def path2method(self, path):
+        """
+        Convert a request path to a method name.
+        """
+        if self.json_path_prefix:
+            if path.startswith(self.json_path_prefix):
+                return path[len(self.json_path_prefix):].replace('/', '_')
+            return None
+        else:
+            return path.lstrip('/').replace('/', '_')
+
     def _json_parse_qstring(self, qstring):
         """
         Parse a query string into method and parameters.
@@ -150,14 +161,13 @@ class TupeloJSONDispatcher(object):
             except:
                 params[k] = v[0]
 
-        method = None
-        if self.json_path_prefix:
-            if path.startswith(self.json_path_prefix):
-                method = path[len(self.json_path_prefix):].replace('/', '_')
-        else:
-            method = path.lstrip('/').replace('/', '_')
+        return (self.path2method(path), params)
 
-        return (method, params)
+    def register_instance(self, instance):
+        """
+        Register the target object instance.
+        """
+        self.instance = instance
 
     def json_dispatch(self, qstring, headers):
         """
@@ -171,8 +181,6 @@ class TupeloJSONDispatcher(object):
         params = self._json_parse_headers(headers)
         params.update(qs_params)
 
-        # ugly. here we are relying on the existence of
-        # "instance" member from SimpleXMLRPCDispatcher
         return json.dumps(self.instance._json_dispatch(method, params))
 
 
