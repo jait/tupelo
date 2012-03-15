@@ -1,138 +1,158 @@
-/* tupelo.js
- * vim: sts=4 sw=4 et:
-*/
-/*jslint devel: true, browser: true, sloppy: true, maxerr: 50, indent: 4 */
+(function() {
+  var $, T, root;
+  var __hasProp = Object.prototype.hasOwnProperty;
 
-var T = (function ($) {
-    var my = {};
+  root = typeof exports !== "undefined" && exports !== null ? exports : this;
 
-    my.debug = false;
+  $ = jQuery;
 
-    // some constants
-    my.NOLO = 0;
-    my.RAMI = 1;
-    my.VOTING = 1;
-    my.ONGOING = 2;
+  T = {};
 
-    my.log = function (msg) {
-        if (my.debug) {
-            console.log(msg);
-        }
+  T.debug = false;
+
+  T.NOLO = 0;
+
+  T.RAMI = 1;
+
+  T.VOTING = 1;
+
+  T.ONGOING = 2;
+
+  T.log = function(msg) {
+    if (T.debug) {
+      return typeof console !== "undefined" && console !== null ? console.log(msg) : void 0;
+    }
+  };
+
+  T.Timer = function(url, interval, callback, params) {
+    var ajaxCallback, ajaxError, getData;
+    var _this = this;
+    this.url = url;
+    this.interval = interval;
+    this.callback = callback;
+    this.params = params;
+    ajaxCallback = function(result) {
+      _this.callback(result);
+      return _this.setTimer();
     };
-
-    // Simple ajax timer using jQuery
-    my.Timer = function (url, interval, callback, params) {
-
-        this.url = url;
-        this.interval = interval;
-        this.callback = callback;
-        this.params = params; // extra params for jQuery.ajax
-        // to make the object available in callback closures
-        var me = this;
-
-        function ajaxCallback(result) {
-            //my.log(me);
-            me.callback(result);
-            me.setTimer();
-        }
-
-        function ajaxError(xhr, astatus, error) {
-            my.log("status: " + astatus);
-            my.log("error: " + error);
-            me.disable();
-        }
-
-        function getData() {
-            //my.log("getData: " + me.url);
-            var params = {url: me.url, success: ajaxCallback,
-                error: ajaxError};
-            // set extra params
-            for (var key in me.params) {
-                if (me.params.hasOwnProperty(key)) {
-                    params[key] = me.params[key];
-                }
-            }
-            $.ajax(params);
-        }
-
-        this.setTimer = function () {
-            //my.log("setTimer " + this);
-            //my.log("setting timeout to " + this.interval);
-            this.timer = window.setTimeout(getData, this.interval);
-            //my.log("timer: " + this.timer);
-            return this;
-        };
-
-        this.setTimer();
+    ajaxError = function(xhr, astatus, error) {
+      T.log("status: " + astatus);
+      T.log("error: " + error);
+      return _this.disable();
     };
-
-    my.Timer.prototype.disable = function () {
-        if (this.timer) {
-            window.clearTimeout(this.timer);
-            this.timer = undefined;
-        }
-        return this;
+    getData = function() {
+      var key, _ref;
+      params = {
+        url: _this.url,
+        success: ajaxCallback,
+        error: ajaxError
+      };
+      _ref = _this.params;
+      for (key in _ref) {
+        if (!__hasProp.call(_ref, key)) continue;
+        params[key] = _this.params[key];
+      }
+      return $.ajax(params);
     };
-
-    // Player
-    my.Player = function (name) {
-        this.player_name = name;
+    this.setTimer = function() {
+      this.timer = window.setTimeout(getData, this.interval);
+      return this;
     };
+    return this.setTimer();
+  };
 
-    my.Player.prototype.fromJSON = function (json) {
-        var obj = eval("(" + json + ")");
-        return this.fromObj(obj);
-    };
+  T.Timer.prototype.disable = function() {
+    if (this.timer) {
+      window.clearTimeout(this.timer);
+      this.timer = null;
+    }
+    return this;
+  };
 
-    my.Player.prototype.fromObj = function (obj) {
-        for (var prop in obj) {
-            this[prop] = obj[prop];
-        }
-        return this;
-    };
+  T.Player = (function() {
 
-    my.Player.prototype.toString = function () {
-        return "" + this.player_name + " (" + this.id + ")";
-    };
-
-    // Card
-    var suits = [{name: "spades", html: "&#x2660;"},
-            {name: "diamonds", html: "&#x2666;"},
-            {name: "clubs", html: "&#x2663;"},
-            {name: "hearts", html: "&#x2665;"}];
-
-    function valueToChar(value) {
-        switch (value) {
-            case 11:
-                return "J";
-            case 12:
-                return "Q";
-            case 13:
-                return "K";
-            case 1: // fall through
-            case 14:
-                return "A";
-            default:
-                return (value + "");
-        }
+    function Player(name) {
+      this.player_name = name;
     }
 
-    my.Card = function (suit, value) {
-        this.suit = suit;
-        this.value = value;
+    Player.prototype.fromJSON = function(json) {
+      var obj;
+      obj = eval("(" + json + ")");
+      return this.fromObj(obj);
     };
 
-    my.Card.prototype.toString = function () {
-        return "" + valueToChar(this.value) + " of " + suits[this.suit].name;
+    Player.prototype.fromObj = function(obj) {
+      var prop;
+      for (prop in obj) {
+        this[prop] = obj[prop];
+      }
+      return this;
     };
 
-    my.Card.prototype.toShortString = function () {
-        return "" + valueToChar(this.value) + suits[this.suit].html;
+    Player.prototype.toString = function() {
+      return "" + this.player_name + " (" + this.id + ")";
     };
 
-    my.Card.prototype.toShortHtml = function () {
-        return "<span class=\"" + suits[this.suit].name + "\">" + this.toShortString() + "</span>";
+    return Player;
+
+  })();
+
+  T.Card = (function() {
+    var suits, valueToChar;
+
+    function Card(suit, value) {
+      this.suit = suit;
+      this.value = value;
+    }
+
+    suits = [
+      {
+        name: "spades",
+        html: "&#x2660;"
+      }, {
+        name: "diamonds",
+        html: "&#x2666;"
+      }, {
+        name: "clubs",
+        html: "&#x2663;"
+      }, {
+        name: "hearts",
+        html: "&#x2665;"
+      }
+    ];
+
+    valueToChar = function(value) {
+      switch (value) {
+        case 11:
+          return "J";
+        case 12:
+          return "Q";
+        case 13:
+          return "K";
+        case 1:
+        case 14:
+          return "A";
+        default:
+          return value + "";
+      }
     };
 
-    return my;
-}(jQuery));
+    Card.prototype.toString = function() {
+      return "" + valueToChar(this.value) + " of " + suits[this.suit].name;
+    };
+
+    Card.prototype.toShortString = function() {
+      return "" + valueToChar(this.value) + suits[this.suit].html;
+    };
+
+    Card.prototype.toShortHtml = function() {
+      return "<span class=\"" + suits[this.suit].name + "\">" + this.toShortString() + "</span>";
+    };
+
+    return Card;
+
+  })();
+
+  root.T = T;
+
+}).call(this);
