@@ -21,7 +21,7 @@ def rpc_decode(cls, rpcobj):
 
 def _memoize(func, cache={}):
     def decf(*args, **kwargs):
-        key = (func, tuple(args), frozenset(kwargs.items()))
+        key = (func, tuple(args), frozenset(list(kwargs.items())))
         if key not in cache:
             cache[key] = func(*args, **kwargs)
         return cache[key]
@@ -109,7 +109,7 @@ class RPCSerializable(object):
             return rpcobj
         # default behaviour
         return self
-    
+
     @classmethod
     def rpc_decode_simple(cls, rpcobj):
         """
@@ -135,7 +135,7 @@ class RPCSerializable(object):
         """
         Decode one attribute.
         """
-        if rpcobj.has_key(attr):
+        if attr in rpcobj:
             attr_cls = self.get_class_for_type(atype)
             if attr_cls:
                 setattr(self, attr,

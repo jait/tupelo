@@ -3,11 +3,11 @@
 
 import random
 import copy
-import rpc
 import uuid
 import base64
 import types
 from functools import wraps
+from . import rpc
 
 # game mode
 NOLO = 0
@@ -17,21 +17,21 @@ TURN_NONE = -1
 
 def smart_unicode(s, encoding='utf-8'):
     """
-    Convert some object to unicode.
+    Convert some object to unicode bytes.
     """
-    if type(s) in (unicode, int, long, float, types.NoneType):
-        return unicode(s)
+    if isinstance(s, (str, int, float, type(None))):
+        return str(s)
 
     if isinstance(s, str):
         return s.decode(encoding)
 
-    return unicode(s)
+    return str(s)
 
 def smart_str(s, encoding='utf-8'):
     """
     Convert some object to bytestring.
     """
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         return s.encode(encoding)
 
     return str(s)
@@ -65,7 +65,7 @@ def traced(func):
     A decorator for tracing func calls.
     """
     def wrapper(*args, **kwargs):
-        print "DEBUG: entering %s()" % func.__name__
+        print(("DEBUG: entering %s()" % func.__name__))
         retval = func(*args, **kwargs)
         return retval
 
@@ -95,7 +95,7 @@ def short_uuid():
 
     Returns a string (base64 encoded UUID).
     """
-    return base64.urlsafe_b64encode(uuid.uuid4().get_bytes()).replace('=', '')
+    return base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().replace('=', '')
 
 
 class StrAndUnicode(object):
@@ -157,8 +157,23 @@ class Suit(object):
         self.value = value
         self.char = char
 
-    def __cmp__(self, other):
-        return cmp(self.value, other.value)
+    def __eq__(self, other):
+        return self.value == other.value
+
+    def __ne__(self, other):
+        return self.value != other.value
+
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __le__(self, other):
+        return self.value <= other.value
+
+    def __gt__(self, other):
+        return self.value > other.value
+
+    def __ge__(self, other):
+        return self.value >= other.value
 
     def rpc_encode(self):
         return self.value
@@ -173,10 +188,10 @@ class Suit(object):
         """
         return self.name
 
-HEART = Suit(3, 'hearts', u'\u2665')
-CLUB = Suit(2, 'clubs', u'\u2663')
-DIAMOND = Suit(1, 'diamonds', u'\u2666')
-SPADE = Suit(0, 'spades', u'\u2660')
+HEART = Suit(3, 'hearts', '\u2665')
+CLUB = Suit(2, 'clubs', '\u2663')
+DIAMOND = Suit(1, 'diamonds', '\u2666')
+SPADE = Suit(0, 'spades', '\u2660')
 
 ALL_SUITS = [HEART, CLUB, DIAMOND, SPADE]
 
@@ -186,7 +201,7 @@ def _get_suit(value):
             return suit
 
     return None
-        
+
 class Card(rpc.RPCSerializable, StrAndUnicode):
     """
     Class that represents a single card.
@@ -198,13 +213,13 @@ class Card(rpc.RPCSerializable, StrAndUnicode):
         rpc.RPCSerializable.__init__(self)
         self.suit = suit
         self.value = value
-        self.potential_owners = range(0, 4)
+        self.potential_owners = list(range(0, 4))
         self.played_by = None
 
     @classmethod
     def rpc_decode(cls, rpcobj):
         card = Card(rpc.rpc_decode(Suit, rpcobj['suit']), rpcobj['value'])
-        if rpcobj.has_key('played_by'):
+        if 'played_by' in rpcobj:
             card.played_by = rpcobj['played_by']
 
         return card
@@ -215,12 +230,17 @@ class Card(rpc.RPCSerializable, StrAndUnicode):
     def __ne__(self, other):
         return self.suit != other.suit or self.value != other.value
 
-    def __cmp__(self, other):
-        suitcmp = cmp(self.suit, other.suit)
-        if suitcmp != 0: 
-            return suitcmp
+    def __lt__(self, other):
+        return self.suit < other.suit or self.value < other.value
 
-        return cmp(self.value, other.value)
+    def __le__(self, other):
+        return self.suit <= other.suit or self.value <= other.value
+
+    def __gt__(self, other):
+        return self.suit > other.suit or self.value > other.value
+
+    def __ge__(self, other):
+        return self.suit >= other.suit or self.value >= other.value
 
     def __repr__(self):
         """
@@ -232,14 +252,14 @@ class Card(rpc.RPCSerializable, StrAndUnicode):
         """
         Get the 'unofficial' unicode representation.
         """
-        return u'%s%s' % (self.char, self.suit.char)
+        return '%s%s' % (self.char, self.suit.char)
 
     @property
     def char(self):
         """
         Get the character corresponding to the card value.
         """
-        if self._chars.has_key(self.value):
+        if self.value in self._chars:
             return self._chars[self.value]
         return str(self.value)
 
@@ -297,10 +317,10 @@ class CardSet(list, rpc.RPCSerializable):
         """
         result = CardSet()
         for card in self:
-            if kwargs.has_key('suit') and card.suit != kwargs['suit']:
+            if 'suit' in kwargs and card.suit != kwargs['suit']:
                 continue
 
-            if kwargs.has_key('value') and card.value != kwargs['value']:
+            if 'value' in kwargs and card.value != kwargs['value']:
                 continue
 
             result.append(card)
@@ -344,10 +364,10 @@ class CardSet(list, rpc.RPCSerializable):
         roof = None
         floor = None
 
-        if kwargs.has_key('roof'):
+        if 'roof' in kwargs:
             roof = kwargs['roof']
 
-        if kwargs.has_key('floor'):
+        if 'floor' in kwargs:
             floor = kwargs['floor']
 
         for card in self:
@@ -357,7 +377,7 @@ class CardSet(list, rpc.RPCSerializable):
                 continue
             if highest is None or card.value > highest.value:
                 highest = card
-                    
+
         return highest
 
     def get_lowest(self, **kwargs):
@@ -368,10 +388,10 @@ class CardSet(list, rpc.RPCSerializable):
         roof = None
         floor = None
 
-        if kwargs.has_key('roof'):
+        if 'roof' in kwargs:
             roof = kwargs['roof']
 
-        if kwargs.has_key('floor'):
+        if 'floor' in kwargs:
             floor = kwargs['floor']
 
         for card in self:

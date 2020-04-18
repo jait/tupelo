@@ -67,36 +67,36 @@ class TestTupeloRPCInterface(unittest.TestCase):
         iface = I()
         encoded = self._encoded_player()
         p_data = iface.player_register(encoded)
-        self.assert_(isinstance(p_data['id'], basestring))
-        self.assert_(isinstance(p_data['akey'], basestring))
+        self.assertTrue(isinstance(p_data['id'], str))
+        self.assertTrue(isinstance(p_data['akey'], str))
         plr = iface._ensure_auth(p_data['akey'])
         self.assertEqual(plr.id, p_data['id'])
         # list players
         players_raw = iface.player_list(p_data['akey'])
-        self.assert_(isinstance(players_raw, list))
+        self.assertTrue(isinstance(players_raw, list))
         players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
         me = None
         for pl in players:
             if pl.id == p_data['id']:
                 me = pl
                 break
-        self.assert_(me is not None)
+        self.assertTrue(me is not None)
         self.assertEqual(me.player_name, encoded['player_name'])
         iface._clear_auth()
 
     def testHelloEmpty(self):
         iface = I()
         hello = iface.hello()
-        self.assert_(isinstance(hello, dict))
-        self.assert_(hello.has_key('version'))
-        self.assert_(isinstance(hello['version'], basestring))
-        self.assertFalse(hello.has_key('player'))
-        self.assertFalse(hello.has_key('game'))
+        self.assertTrue(isinstance(hello, dict))
+        self.assertTrue('version' in hello)
+        self.assertTrue(isinstance(hello['version'], str))
+        self.assertFalse('player' in hello)
+        self.assertFalse('game' in hello)
 
     def testGame(self):
         iface = I()
         gamelist = iface.game_list()
-        self.assert_(isinstance(gamelist, dict))
+        self.assertTrue(isinstance(gamelist, dict))
         self.assertEqual(len(gamelist), 0)
         # register
         p_encoded = self._encoded_player()
@@ -105,21 +105,21 @@ class TestTupeloRPCInterface(unittest.TestCase):
         g_id = iface.game_create(p_data['akey'])
         # list
         gamelist = iface.game_list()
-        self.assert_(gamelist.has_key(str(g_id)))
+        self.assertTrue(str(g_id) in gamelist)
         players_raw = gamelist[str(g_id)]
-        self.assert_(isinstance(players_raw, list))
+        self.assertTrue(isinstance(players_raw, list))
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
-        self.assert_(p_data['id'] in [pl.id for pl in players])
+        self.assertTrue(p_data['id'] in [pl.id for pl in players])
         # get_info
         info = iface.game_get_info(g_id)
-        self.assert_(info == players_raw)
+        self.assertTrue(info == players_raw)
         # leave
         ret = iface.player_quit(p_data['akey'])
         self.assertEqual(ret, True)
         # after the only player leaves, the game should get deleted
         gamelist = iface.game_list()
-        self.assertFalse(gamelist.has_key(g_id))
+        self.assertFalse(g_id in gamelist)
 
     def testFullGame(self):
         iface = I()
@@ -140,16 +140,16 @@ class TestTupeloRPCInterface(unittest.TestCase):
         self.assertEqual(ret, g_id)
 
         gamelist = iface.game_list()
-        self.assert_(gamelist.has_key(str(g_id)))
+        self.assertTrue(str(g_id) in gamelist)
         players = gamelist[str(g_id)]
         self.assertEqual(len(players), len(p_datas))
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players]
         for p_data in p_datas:
-            self.assert_(p_data['id'] in [pl.id for pl in players])
+            self.assertTrue(p_data['id'] in [pl.id for pl in players])
 
         state = iface.game_get_state(p_datas[0]['akey'], g_id)
-        self.assert_(state.has_key('game_state'))
+        self.assertTrue('game_state' in state)
         self.assertEqual(state['game_state']['state'], 0)
 
         try:
@@ -157,9 +157,9 @@ class TestTupeloRPCInterface(unittest.TestCase):
             self.assertEqual(ret, True)
 
             state = iface.game_get_state(p_datas[0]['akey'], g_id)
-            self.assert_(state.has_key('game_state'))
+            self.assertTrue('game_state' in state)
             self.assertEqual(state['game_state']['state'], 1)
-            self.assert_(state.has_key('hand'))
+            self.assertTrue('hand' in state)
 
             ret = iface.game_leave(p_datas[0]['akey'], g_id)
             self.assertEqual(ret, True)

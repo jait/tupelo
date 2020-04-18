@@ -2,11 +2,11 @@
 # vim: set sts=4 sw=4 et:
 
 import time
-import xmlrpclib
-import players
-import rpc
-from common import GameState, CardSet, GameError, RuleError, ProtocolError, simple_decorator
-from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
+import xmlrpc.client
+from . import players
+from . import rpc
+from .common import GameState, CardSet, GameError, RuleError, ProtocolError, simple_decorator
+from .events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 
 @simple_decorator
 def error2fault(func):
@@ -17,12 +17,12 @@ def error2fault(func):
     def catcher(*args):
         try:
             return func(*args)
-        except GameError, error:
-            raise xmlrpclib.Fault(GameError.rpc_code, str(error))
-        except RuleError, error:
-            raise xmlrpclib.Fault(RuleError.rpc_code, str(error))
-        except ProtocolError, error:
-            raise xmlrpclib.Fault(ProtocolError.rpc_code, str(error))
+        except GameError as error:
+            raise xmlrpc.client.Fault(GameError.rpc_code, str(error))
+        except RuleError as error:
+            raise xmlrpc.client.Fault(RuleError.rpc_code, str(error))
+        except ProtocolError as error:
+            raise xmlrpc.client.Fault(ProtocolError.rpc_code, str(error))
     return catcher
 
 @simple_decorator
@@ -34,7 +34,7 @@ def fault2error(func):
     def catcher(*args):
         try:
             return func(*args)
-        except xmlrpclib.Fault, error:
+        except xmlrpc.client.Fault as error:
             error_classes = (GameError, RuleError, ProtocolError)
             for klass in error_classes:
                 if error.faultCode == klass.rpc_code:
@@ -69,7 +69,7 @@ class XMLRPCCliPlayer(players.CliPlayer):
         elif isinstance(event, StateChangedEvent):
             self.game_state.update(event.game_state)
         else:
-            print "unknown event: %s" % event
+            print("unknown event: %s" % event)
 
     def wait_for_turn(self):
         """
@@ -98,7 +98,7 @@ class XMLRPCProxyController(object):
             not server_uri.startswith('https://'):
             server_uri = 'http://' + server_uri
 
-        self.server = xmlrpclib.ServerProxy(server_uri)
+        self.server = xmlrpc.client.ServerProxy(server_uri)
         self.game_id = None
         self.akey = None
 

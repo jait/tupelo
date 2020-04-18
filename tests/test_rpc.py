@@ -26,7 +26,7 @@ class TestRPC(unittest.TestCase):
         # change something
         encoded['a'] = 2
         decoded = rpc.rpc_decode(_RPCTestClass, encoded)
-        self.assert_(isinstance(decoded, _RPCTestClass))
+        self.assertTrue(isinstance(decoded, _RPCTestClass))
         self.assertEqual(decoded.a, 2)
 
     def testDecodeAttr(self):

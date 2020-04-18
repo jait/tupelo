@@ -2,17 +2,18 @@
 # -*- coding: utf-8 -*-
 # vim: set sts=4 sw=4 et:
 
-import common
-from common import CardSet
-from common import NOLO, RAMI
-from common import TURN_NONE
-from common import RuleError, GameError, GameState 
-from common import synchronized_method
-import players
 import threading
 import sys
 import copy
 import logging
+
+from .common import CardSet
+from .common import NOLO, RAMI, DIAMOND, HEART
+from .common import TURN_NONE
+from .common import RuleError, GameError, GameState
+from .common import synchronized_method
+from .players import ThreadedPlayer
+
 
 class GameController(object):
     """
@@ -110,7 +111,7 @@ class GameController(object):
                 player.act(self, self.state)
 
         for player in self.players:
-            if player and isinstance(player, players.ThreadedPlayer):
+            if player and isinstance(player, ThreadedPlayer):
                 if player.is_alive() and player.thread is not threading.current_thread():
                     player.join()
 
@@ -128,7 +129,7 @@ class GameController(object):
         Get players in a team.
         """
         return [player for player in self.players if player.team == team]
-       
+
     def _get_team_str(self, team):
         """
         Get team string representation.
@@ -154,7 +155,7 @@ class GameController(object):
 
         if len(self.players) < 4:
             raise GameError('Not enough players')
-        
+
         for player in self.players:
             player.start()
 
@@ -194,7 +195,7 @@ class GameController(object):
             logging.debug("%s's hand: %s", player.player_name,
                 str(player.hand))
 
-        # voting 
+        # voting
         self.state.mode = NOLO
         self.state.rami_chosen_by = None
         self._set_state(GameState.VOTING)
@@ -242,7 +243,7 @@ class GameController(object):
                 winner = 1
                 loser = 0
             score = (7 - self.state.tricks[winner]) * 4
-        else: 
+        else:
             if self.state.tricks[0] > self.state.tricks[1]:
                 winner = 0
                 loser = 1
@@ -255,7 +256,7 @@ class GameController(object):
             else:
                 score = (self.state.tricks[winner] - 6) * 4
 
-        self._send_msg('Team %s won this hand with %d tricks' % 
+        self._send_msg('Team %s won this hand with %d tricks' %
                 (self._get_team_str(winner), self.state.tricks[winner]))
 
         if self.state.score[loser] > 0:
@@ -264,12 +265,12 @@ class GameController(object):
         else:
             self.state.score[winner] += score
             if self.state.score[winner] > 52:
-                self._send_msg('Team %s won with score %d!' % 
+                self._send_msg('Team %s won with score %d!' %
                         (self._get_team_str(winner), self.state.score[winner]))
                 self.shutdown_event.set()
                 return
             else:
-                self._send_msg('Team %s is at %d' % 
+                self._send_msg('Team %s is at %d' %
                         (self._get_team_str(winner), self.state.score[winner]))
 
         self.state.dealer = (self.state.dealer + 1) % 4
@@ -295,7 +296,7 @@ class GameController(object):
         for plr in self.players:
             plr.card_played(player, card, self.state)
 
-        if card.suit == common.DIAMOND or card.suit == common.HEART:
+        if card.suit == DIAMOND or card.suit == HEART:
             self.state.mode = RAMI
             self.state.rami_chosen_by = player
             self._next_in_turn(self.players.index(player) - 1)
@@ -319,7 +320,7 @@ class GameController(object):
 
         self.state.table.clear()
         self._set_state(GameState.ONGOING)
-            
+
     def play_card(self, player, card):
         """
         Play one card on the table.
@@ -337,9 +338,9 @@ class GameController(object):
             if len(table) > 0 and card.suit != table[0].suit:
                 if len(player.hand.get_cards(suit=table[0].suit)) > 0:
                     raise RuleError('Suit must be followed')
-            
+
             # make sure that the player actually has the card
-            try: 
+            try:
                 table.append(player.hand.take(card))
                 card.played_by = player.id
             except ValueError:
@@ -363,4 +364,4 @@ class GameController(object):
                 for plr in self.players:
                     plr.card_played(player, card, self.state)
                 self._signal_act()
-        
+

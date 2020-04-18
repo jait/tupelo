@@ -1,24 +1,24 @@
 #!/usr/bin/env python
 # vim: set sts=4 sw=4 et:
 
-import players
-import rpc
-from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState, smart_unicode
-from game import GameController
-from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
+from . import players
+from . import rpc
+from .common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState, smart_unicode
+from .game import GameController
+from .events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 import sys
 import copy
 import logging
-import Queue
-import SimpleXMLRPCServer
-import xmlrpc
+import queue
+import xmlrpc.server
+from . import xmlrpc
 import traceback
 import inspect
 import json
-import urlparse
-import Cookie
+import urllib.parse
+import http.cookies
 try:
-    from urlparse import parse_qs
+    from urllib.parse import parse_qs
 except:
     from cgi import parse_qs
 try:
@@ -32,12 +32,6 @@ DEFAULT_PORT = 8052
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
 VERSION_STRING = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
-
-def _log_exc(exception, level=logging.INFO):
-    """
-    Print the exception type and value string to log.
-    """
-    logging.log(level, "%s: %s", type(exception).__name__, str(exception))
 
 @simple_decorator
 def authenticated(fn):
@@ -68,7 +62,7 @@ def _game_get_rpc_info(game):
     return [rpc.rpc_encode(player) for player in game.players]
 
 
-class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
+class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
     """
     Custom request handler class to support ajax/json RPC for GET requests and XML-RPC for POST.
     """
@@ -88,11 +82,11 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
     def do_GET(self):
         try:
             response = self.server.json_dispatch(self.path, self.headers)
-        except ProtocolError, err:
+        except ProtocolError as err:
             self.report_404()
             return
-        except (GameError, RuleError), err:
-            _log_exc(err)
+        except (GameError, RuleError) as err:
+            logging.exception(err)
             self.send_response(403) # forbidden
             response_obj = {'code': err.rpc_code,
                 'message': str(err)}
@@ -107,9 +101,8 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
             # shut down the connection
             self.wfile.flush()
             self.connection.shutdown(1)
-        except Exception, err:
-            traceback.print_exception(*sys.exc_info())
-            _log_exc(err, logging.ERROR)
+        except Exception as err:
+            logging.exception(err)
             self.send_response(500)
             self.end_headers()
         else:
@@ -140,8 +133,8 @@ class TupeloJSONDispatcher(object):
         """
         params = {}
         # we support just 'akey' cookie
-        cookie = Cookie.SimpleCookie(headers.get('Cookie'))
-        if cookie.has_key('akey'):
+        cookie = http.cookies.SimpleCookie(headers.get('Cookie'))
+        if 'akey' in cookie:
             params['akey'] = cookie['akey'].value
 
         return params
@@ -163,11 +156,11 @@ class TupeloJSONDispatcher(object):
 
         Return a tuple of (method_name, params).
         """
-        parsed = urlparse.urlparse(qstring)
+        parsed = urllib.parse.urlparse(qstring)
         path = parsed[2]
         params = parse_qs(parsed[4])
         # use only the first value of any given parameter
-        for k, v in params.items():
+        for k, v in list(params.items()):
             # try to decode a json parameter
             # if it fails, fall back to plain string
             try:
@@ -198,14 +191,14 @@ class TupeloJSONDispatcher(object):
         return json.dumps(self.instance._json_dispatch(method, params))
 
 
-class TupeloServer(SimpleXMLRPCServer.SimpleXMLRPCServer, TupeloJSONDispatcher):
+class TupeloServer(xmlrpc.server.SimpleXMLRPCServer, TupeloJSONDispatcher):
     """
     Custom server class that combines XML-RPC and JSON servers.
     """
 
     def __init__(self, *args, **kwargs):
         nargs = (args[0:1] or (None,)) +  (TupeloRequestHandler,) +  args[2:]
-        SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(self, *nargs, **kwargs)
+        xmlrpc.server.SimpleXMLRPCServer.__init__(self, *nargs, **kwargs)
         TupeloJSONDispatcher.__init__(self)
         rpciface = TupeloRPCInterface()
         self.register_instance(rpciface)
@@ -311,7 +304,7 @@ class TupeloRPCInterface(object):
         Dispatch an XML-RPC call.
         """
         realname = method.replace('.', '_')
-        if realname in self.methods.keys():
+        if realname in list(self.methods.keys()):
             func = getattr(self, realname)
             return func(*params)
 
@@ -321,15 +314,15 @@ class TupeloRPCInterface(object):
         """
         Dispatch a json method call to method with kwparams.
         """
-        if method in self.methods.keys():
+        if method in list(self.methods.keys()):
             func = getattr(self, method)
             # strip out invalid params
-            for k in kwparams.keys():
+            for k in list(kwparams.keys()):
                 if k not in self.methods[method]:
                     del kwparams[k]
             try:
                 return func(**kwparams)
-            except TypeError, err:
+            except TypeError as err:
                 raise ProtocolError(str(err))
 
         raise ProtocolError('Method "%s" is not supported' % method)
@@ -524,7 +517,7 @@ class RPCProxyPlayer(players.Player):
     """
     def __init__(self, name):
         players.Player.__init__(self, name)
-        self.events = Queue.Queue()
+        self.events = queue.Queue()
         self.game = None
 
     def rpc_encode(self, private=False):
@@ -565,7 +558,7 @@ class RPCProxyPlayer(players.Player):
         try:
             while True:
                 eventlist.append(self.events.get_nowait())
-        except Queue.Empty:
+        except queue.Empty:
             pass
 
         return eventlist

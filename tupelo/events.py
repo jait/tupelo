@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim: set sts=4 sw=4 et:
 
-import rpc
+from . import rpc
 
 
 class Event(rpc.RPCSerializable):
