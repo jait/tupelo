@@ -2,23 +2,23 @@
 # vim: set sts=4 sw=4 et:
 
 import threading
-from .common import CardSet, SPADE, CLUB, HEART, DIAMOND
+from .common import Card, CardSet, SPADE, CLUB, HEART, DIAMOND
 from .common import NOLO, RAMI
 from .common import RuleError, UserQuit, GameState
-from . import rpc
+from .rpc import RPCSerializable
 
-class Player(rpc.RPCSerializable):
+class Player(RPCSerializable):
     """
     Base class for players.
     """
     rpc_attrs = ('id', 'player_name', 'team')
 
-    def __init__(self, name):
+    def __init__(self, name:str):
+        super().__init__()
         self.id = None
-        rpc.RPCSerializable.__init__(self)
         self.player_name = name
         self.hand = CardSet()
-        self.team = 0
+        self.team: int = 0
         self.controller = None
         self.game_state = GameState()
 
@@ -36,7 +36,7 @@ class Player(rpc.RPCSerializable):
         return state
 
     @classmethod
-    def rpc_decode(cls, rpcobj):
+    def rpc_decode(cls, rpcobj) -> 'Player':
         """
         Decode an RPC-form object into an instance of cls.
         """
@@ -59,19 +59,19 @@ class Player(rpc.RPCSerializable):
         """
         pass
 
-    def card_played(self, player, card, game_state):
+    def card_played(self, player: 'Player', card: Card, game_state: GameState):
         """
         Signal that a card has been played by the given player.
         """
         pass
 
-    def trick_played(self, player, game_state):
+    def trick_played(self, player, game_state: GameState):
         """
         Signal that a trick has been played. "player" had the winning card.
         """
         pass
 
-    def state_changed(self, game_state):
+    def state_changed(self, game_state: GameState):
         """
         Signal that the game state has changed, e.g. from VOTING to ONGOING.
         """
@@ -91,13 +91,13 @@ class Player(rpc.RPCSerializable):
         print('Not implemented!')
         raise NotImplementedError()
 
-    def send_message(self, sender, msg):
+    def send_message(self, sender, msg: str):
         """
         """
         print('Not implemented!')
         raise NotImplementedError()
 
-    def act(self, controller, game_state):
+    def act(self, controller, game_state: GameState):
         """
         Do something.
 
@@ -120,12 +120,7 @@ class ThreadedPlayer(Player):
         """
         Create a new thread for this player.
         """
-        try:
-            strname = str(self.player_name)
-        except UnicodeEncodeError:
-            strname = [x for x in self.player_name if ord(x) < 128]
-
-        return threading.Thread(None, self.run, strname)
+        return threading.Thread(None, self.run, self.player_name)
 
     def wait_for_turn(self):
         """
@@ -182,10 +177,10 @@ class ThreadedPlayer(Player):
 
             self.wait_for_turn()
 
-            if self.game_state.state == GameState.STOPPED or \
+            if self.game_state.status == GameState.STOPPED or \
                     self.stop_flag == True:
                 break
-            elif self.game_state.state == GameState.VOTING:
+            elif self.game_state.status == GameState.VOTING:
                 try:
                     self.vote()
                 except UserQuit as error:
@@ -195,7 +190,7 @@ class ThreadedPlayer(Player):
                 except Exception as error:
                     print(('Error:', error))
                     raise
-            elif self.game_state.state == GameState.ONGOING:
+            elif self.game_state.status == GameState.ONGOING:
                 try:
                     self.play_card()
                 except UserQuit as error:
@@ -206,7 +201,7 @@ class ThreadedPlayer(Player):
                     print(('Error:', error))
                     raise
             else:
-                print(("Warning: unknown state %d" % self.game_state.state))
+                print(("Warning: unknown status %d" % self.game_state.status))
 
         print(('%s exiting' % self))
 
@@ -217,7 +212,7 @@ class ThreadedPlayer(Player):
         self.stop_flag = True
         self.turn_event.set()
 
-    def act(self, controller, game_state):
+    def act(self, controller, game_state: GameState):
         """
         Do something.
 
@@ -257,7 +252,7 @@ class DummyBotPlayer(ThreadedPlayer):
             # nolo, black cards
             choices = self.hand.get_cards(suit=SPADE)
             choices.extend(self.hand.get_cards(suit=CLUB))
-            
+
         if len(choices) == 0:
             choices = self.hand
 
@@ -301,7 +296,7 @@ class DummyBotPlayer(ThreadedPlayer):
                             card = choices.get_highest()
                         else:
                             # i'm third
-                            # TODO: should also consider higher cards 
+                            # TODO: should also consider higher cards
                             candidate = choices.get_highest(roof=high.value)
                             if candidate is not None:
                                 card = candidate
@@ -348,10 +343,10 @@ class DummyBotPlayer(ThreadedPlayer):
                             candidate = choices.get_highest(floor=high.value)
                             if candidate is not None:
                                 card = candidate
-                            else: 
+                            else:
                                 # but I cannot take it...
                                 card = choices.get_lowest()
-                                
+
         try:
             #print '%s playing %s' % (self, card)
             self.controller.play_card(self, card)
@@ -376,16 +371,16 @@ class CountingBotPlayer(DummyBotPlayer):
         self.cards_left = CardSet.new_full_deck() - self.hand
         super(CountingBotPlayer, self).vote()
 
-    def card_played(self, player, card, game_state):
+    def card_played(self, player, card, game_state: GameState):
         """
         Signal that a card has been played by the given player.
         """
         if player == self:
             return
 
-        if game_state.state == GameState.VOTING:
+        if game_state.status == GameState.VOTING:
             pass
-        elif game_state.state == GameState.ONGOING:
+        elif game_state.status == GameState.ONGOING:
             #print "removing %s  from %s" %(card, self.cards_left)
             try:
                 self.cards_left.remove(card)
@@ -417,7 +412,7 @@ class CliPlayer(ThreadedPlayer):
                 index = int(uinput) - 1
                 if index < 0:
                     raise IndexError()
-                card = self.hand[index] 
+                card = self.hand[index]
                 card_ok = True
             except (IndexError, ValueError):
                 print("Invalid choice `%s'" % uinput)
@@ -481,7 +476,7 @@ class CliPlayer(ThreadedPlayer):
             except EOFError:
                 raise UserQuit('EOF from command line')
 
-    def card_played(self, player, card, game_state):
+    def card_played(self, player: Player, card: Card, game_state: GameState):
         """
         Event handler for a played card.
         """
@@ -490,7 +485,7 @@ class CliPlayer(ThreadedPlayer):
         else:
             player_str = '%s' % player
 
-        if game_state.state == GameState.VOTING:
+        if game_state.status == GameState.VOTING:
             print('%s voted %s' % (player_str, card))
         else:
             print('%s played %s' % (player_str, card))

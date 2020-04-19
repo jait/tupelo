@@ -3,7 +3,6 @@
 # vim: set sts=4 sw=4 et:
 
 import unittest
-import types
 from tupelo import rpc
 from tupelo.server import TupeloRPCInterface as I, TupeloJSONDispatcher as D
 from tupelo.players import Player
@@ -150,7 +149,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
 
         state = iface.game_get_state(p_datas[0]['akey'], g_id)
         self.assertTrue('game_state' in state)
-        self.assertEqual(state['game_state']['state'], 0)
+        self.assertEqual(state['game_state']['status'], 0)
 
         try:
             ret = iface.game_start(p_datas[0]['akey'], g_id)
@@ -158,7 +157,7 @@ class TestTupeloRPCInterface(unittest.TestCase):
 
             state = iface.game_get_state(p_datas[0]['akey'], g_id)
             self.assertTrue('game_state' in state)
-            self.assertEqual(state['game_state']['state'], 1)
+            self.assertEqual(state['game_state']['status'], 1)
             self.assertTrue('hand' in state)
 
             ret = iface.game_leave(p_datas[0]['akey'], g_id)

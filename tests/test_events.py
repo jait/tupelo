@@ -53,7 +53,7 @@ class TestEventsRPC(unittest.TestCase):
     def testStateChanged(self):
         cls = events.StateChangedEvent
         game_state = common.GameState()
-        game_state.state = common.GameState.VOTING
+        game_state.status = common.GameState.VOTING
         e = cls(game_state)
         self.assertTrue(e.game_state is not None)
         e2 = rpc.rpc_decode(events.Event, rpc.rpc_encode(e))

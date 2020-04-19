@@ -164,7 +164,7 @@
       $("#name").val("");
       tupelo.player.id = result.id;
       tupelo.player.akey = result.akey;
-      $.cookie("akey", result.akey);
+      Cookies.set("akey", result.akey);
       T.log(tupelo);
       dbg();
       $("#game_list table tbody").html("");
@@ -199,7 +199,7 @@
         clearInterval(tupelo.list_timer);
         tupelo.list_timer = null;
       }
-      $.cookie("akey", null);
+      Cookies.remove("akey");
       tupelo.player = null;
       T.log(tupelo);
       dbg();
@@ -263,9 +263,9 @@
         if (!__hasProp.call(state, key)) continue;
         tupelo.game_state[key] = state[key];
       }
-      if (state.state === T.VOTING) {
+      if (state.status === T.VOTING) {
         statusStr = "VOTING";
-      } else if (state.state === T.ONGOING) {
+      } else if (state.status === T.ONGOING) {
         if (state.mode === T.NOLO) {
           statusStr = "NOLO";
         } else {
@@ -359,9 +359,9 @@
     };
     stateChanged = function(event) {
       T.log("stateChanged");
-      if (event.game_state.state === T.VOTING) {
+      if (event.game_state.status === T.VOTING) {
         startOk();
-      } else if (event.game_state.state === T.ONGOING) {
+      } else if (event.game_state.status === T.ONGOING) {
         $("#game_area table tbody").click(clearTable);
         tupelo.clear_timeout = setTimeout(clearTable, 5000);
         return false;

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # vim: set sts=4 sw=4 et:
 
+from typing import Union
+
 def rpc_encode(obj):
     """
     Encode an object into RPC-safe form.
@@ -46,19 +48,22 @@ def _itersubclasses(cls, _seen=None):
         if sub not in _seen:
             _seen.add(sub)
             yield sub
-            for sub in _itersubclasses(sub, _seen):
-                yield sub
+            for subsub in _itersubclasses(sub, _seen):
+                yield subsub
 
-class RPCSerializable(object):
+class RPCSerializable():
     """
     Base class for objects that are serializable into
     an RPC-safe form.
     """
-    def __eq__(self, other):
-        if not hasattr(self, 'rpc_attrs'):
-            return object.__eq__(self, other)
+    rpc_attrs = None
+    rpc_type = None
 
-        if hasattr(self, 'rpc_type'):
+    def __eq__(self, other):
+        if not self.rpc_attrs:
+            return super().__eq__(other)
+
+        if self.rpc_type:
             try:
                 if self.rpc_type != other.rpc_type:
                     return False
@@ -82,24 +87,30 @@ class RPCSerializable(object):
         """
         Generator for iterating rpc_attrs with attr and type separated.
         """
-        iterator = iter(cls.rpc_attrs)
+        if not cls.rpc_attrs:
+            return
+
+        iterator = iter(cls.rpc_attrs or tuple())
         while 1:
-            data = iterator.next().split(':')
+            try:
+                data = next(iterator).split(':')
+            except StopIteration:
+                return
+
             if len(data) == 1:
                 data.append(None)
             yield (data[0], data[1])
 
-    def rpc_encode(self):
+    def rpc_encode(self) -> Union[dict, 'RPCSerializable']:
         """
         Encode an instance of RPCSerializable into an rpc object.
         """
-        if hasattr(self, 'rpc_attrs'):
+        if self.rpc_attrs:
             rpcobj = {}
             for attr, _ in self.iter_rpc_attrs():
                 rpcform = None
                 try:
-                    rpcform = getattr(self, attr)
-                    rpcform = rpc_encode(rpcform)
+                    rpcform = rpc_encode(getattr(self, attr))
                 except AttributeError:
                     pass
 
@@ -115,7 +126,7 @@ class RPCSerializable(object):
         """
         Default decode method.
         """
-        if hasattr(cls, 'rpc_attrs'):
+        if cls.rpc_attrs:
             instance = cls()
             for attr, atype in cls.iter_rpc_attrs():
                 instance.rpc_decode_attr(rpcobj, attr, atype)
@@ -125,7 +136,7 @@ class RPCSerializable(object):
             return rpcobj
 
     @classmethod
-    def rpc_decode(cls, rpcobj):
+    def rpc_decode(cls, rpcobj) -> 'RPCSerializable':
         """
         Decode an rpc object into an instance of cls.
         """
@@ -151,7 +162,7 @@ class RPCSerializable(object):
 
         # try first if some class has a overridden type
         for sub in _itersubclasses(RPCSerializable):
-            if hasattr(sub, 'rpc_type') and sub.rpc_type == atype:
+            if sub.rpc_type == atype:
                 return sub
         # then try with class name
         for sub in _itersubclasses(RPCSerializable):

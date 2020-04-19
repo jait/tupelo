@@ -5,7 +5,6 @@ import random
 import copy
 import uuid
 import base64
-import types
 from functools import wraps
 from . import rpc
 
@@ -14,27 +13,6 @@ NOLO = 0
 RAMI = 1
 
 TURN_NONE = -1
-
-def smart_unicode(s, encoding='utf-8'):
-    """
-    Convert some object to unicode bytes.
-    """
-    if isinstance(s, (str, int, float, type(None))):
-        return str(s)
-
-    if isinstance(s, str):
-        return s.decode(encoding)
-
-    return str(s)
-
-def smart_str(s, encoding='utf-8'):
-    """
-    Convert some object to bytestring.
-    """
-    if isinstance(s, str):
-        return s.encode(encoding)
-
-    return str(s)
 
 def simple_decorator(decorator):
     """This decorator can be used to turn simple functions
@@ -98,26 +76,12 @@ def short_uuid():
     return base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().replace('=', '')
 
 
-class StrAndUnicode(object):
-    """
-    A class whose __str__ returns its __unicode__ as a UTF-8 bytestring.
-    """
-    def __str__(self):
-        """
-        Get the 'unofficial' string representation.
-        """
-        return self.__unicode__().encode('utf-8')
-
-
-class TupeloException(StrAndUnicode, Exception):
+class TupeloException(Exception):
     """
     Base class for new exceptions.
     """
     def __init__(self, message=None):
         self.message = message
-
-    def __unicode__(self):
-        return smart_unicode(self.message)
 
 
 class GameError(TupeloException):
@@ -148,7 +112,7 @@ class UserQuit(GameError):
     pass
 
 
-class Suit(object):
+class Suit():
     """
     Class for suits.
     """
@@ -193,32 +157,31 @@ CLUB = Suit(2, 'clubs', '\u2663')
 DIAMOND = Suit(1, 'diamonds', '\u2666')
 SPADE = Suit(0, 'spades', '\u2660')
 
-ALL_SUITS = [HEART, CLUB, DIAMOND, SPADE]
+ALL_SUITS = [SPADE, DIAMOND, CLUB, HEART]
 
-def _get_suit(value):
-    for suit in ALL_SUITS:
-        if suit.value == value:
-            return suit
+def _get_suit(value: int) -> Suit:
+    try:
+        return ALL_SUITS[value]
+    except IndexError:
+        raise ValueError("Suit not found")
 
-    return None
-
-class Card(rpc.RPCSerializable, StrAndUnicode):
+class Card(rpc.RPCSerializable):
     """
     Class that represents a single card.
     """
     _chars = {11:'J', 12:'Q', 13:'K', 14:'A'}
     rpc_attrs = ('suit', 'value', 'played_by')
 
-    def __init__(self, suit, value):
-        rpc.RPCSerializable.__init__(self)
+    def __init__(self, suit: Suit, value: int):
+        super().__init__()
         self.suit = suit
         self.value = value
         self.potential_owners = list(range(0, 4))
         self.played_by = None
 
     @classmethod
-    def rpc_decode(cls, rpcobj):
-        card = Card(rpc.rpc_decode(Suit, rpcobj['suit']), rpcobj['value'])
+    def rpc_decode(cls, rpcobj) -> 'Card':
+        card = Card(Suit.rpc_decode(rpcobj['suit']), rpcobj['value'])
         if 'played_by' in rpcobj:
             card.played_by = rpcobj['played_by']
 
@@ -231,27 +194,29 @@ class Card(rpc.RPCSerializable, StrAndUnicode):
         return self.suit != other.suit or self.value != other.value
 
     def __lt__(self, other):
-        return self.suit < other.suit or self.value < other.value
+        return self._cmp_value < other._cmp_value
 
     def __le__(self, other):
-        return self.suit <= other.suit or self.value <= other.value
+        return self._cmp_value <= other._cmp_value
 
     def __gt__(self, other):
-        return self.suit > other.suit or self.value > other.value
+        return self._cmp_value > other._cmp_value
 
     def __ge__(self, other):
-        return self.suit >= other.suit or self.value >= other.value
+        return self._cmp_value >= other._cmp_value
 
     def __repr__(self):
         """
-        Get the 'official string representation of the object.
+        Get the official string representation of the object.
         """
-        return '<Card: %s of %s>' % (self.value, self.suit.name)
+        return f'<Card: {self.value} of {self.suit.name}>'
 
-    def __unicode__(self):
-        """
-        Get the 'unofficial' unicode representation.
-        """
+    @property
+    def _cmp_value(self) -> int:
+        """Get the integer value that can be used for comparing and sorting cards."""
+        return self.suit.value * 13 + self.value
+
+    def __str__(self):
         return '%s%s' % (self.char, self.suit.char)
 
     @property
@@ -262,12 +227,6 @@ class Card(rpc.RPCSerializable, StrAndUnicode):
         if self.value in self._chars:
             return self._chars[self.value]
         return str(self.value)
-
-    def get_char(self):
-        """
-        For compatibility.
-        """
-        return self.char
 
 
 class CardSet(list, rpc.RPCSerializable):
@@ -408,23 +367,23 @@ class GameState(rpc.RPCSerializable):
     """
     State of a single game.
     """
-    rpc_attrs = ('state', 'mode', 'table:CardSet', 'score', 'tricks', 'turn',
+    rpc_attrs = ('status', 'mode', 'table:CardSet', 'score', 'tricks', 'turn',
             'turn_id')
 
-    # states
+    # statuses
     OPEN = 0
     VOTING = 1
     ONGOING = 2
     STOPPED = 3
 
     def __init__(self):
-        rpc.RPCSerializable.__init__(self)
-        self.state = GameState.OPEN
+        super().__init__()
+        self.status = GameState.OPEN
         self.mode = NOLO
         self.table = CardSet()
         self.score = [0, 0]
         self.tricks = [0, 0]
-        self.rami_chosen_by = None
+        self.rami_chosen_by = None # Player
         self.turn = 0
         self.turn_id = 0
         self.dealer = 0
@@ -447,10 +406,10 @@ class GameState(rpc.RPCSerializable):
             self.turn = (thenext) % 4
 
     def __str__(self):
-        statestr = {GameState.OPEN: 'OPEN', GameState.STOPPED: 'STOPPED',
+        statusstr = {GameState.OPEN: 'OPEN', GameState.STOPPED: 'STOPPED',
                 GameState.VOTING: 'VOTING', GameState.ONGOING: 'ONGOING'}
         modestr = {NOLO: 'NOLO', RAMI: 'RAMI'}
         return "state: %s, mode: %s, score: %s, tricks: %s, dealer: %d" % \
-                (statestr[self.state], modestr[self.mode], str(self.score),
+                (statusstr[self.status], modestr[self.mode], str(self.score),
                         str(self.tricks), self.dealer)
 

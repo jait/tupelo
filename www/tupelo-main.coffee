@@ -242,9 +242,9 @@ $(document).ready ->
       tupelo.game_state[key] = state[key]
 
     # show game status (voting, nolo, rami)
-    if state.state is T.VOTING
+    if state.status is T.VOTING
       statusStr = "VOTING"
-    else if state.state is T.ONGOING
+    else if state.status is T.ONGOING
       if state.mode is T.NOLO
         statusStr = "NOLO"
       else statusStr = "RAMI" if state.mode is T.RAMI
@@ -329,9 +329,9 @@ $(document).ready ->
 
   stateChanged = (event) ->
     T.log "stateChanged"
-    if event.game_state.state is T.VOTING # game started!
+    if event.game_state.status is T.VOTING # game started!
       startOk()
-    else if event.game_state.state is T.ONGOING # VOTING -> ONGOING
+    else if event.game_state.status is T.ONGOING # VOTING -> ONGOING
       # allow the user to clear the table and proceed by clicking the table
       $("#game_area table tbody").click clearTable
       # setting timeout to show the voted cards for a longer time

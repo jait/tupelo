@@ -14,7 +14,7 @@ class _CustomClass(object):
         return 'hilipati'
 
     @classmethod
-    def rpc_decode(cls, rpcobj):
+    def rpc_decode(cls, _rpcobj):
         return 'joop'
 
 class TestRPC(unittest.TestCase):

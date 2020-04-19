@@ -1,18 +1,10 @@
 #!/usr/bin/env python
 # vim: set sts=4 sw=4 et:
 
-from . import players
-from . import rpc
-from .common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState, smart_unicode
-from .game import GameController
-from .events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
-import sys
 import copy
 import logging
 import queue
 import xmlrpc.server
-from . import xmlrpc
-import traceback
 import inspect
 import json
 import urllib.parse
@@ -21,10 +13,13 @@ try:
     from urllib.parse import parse_qs
 except:
     from cgi import parse_qs
-try:
-    from email.header import Header
-except:
-    from email import Header
+from . import players
+from .xmlrpc import error2fault
+from .rpc import rpc_encode, rpc_decode
+from .common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState
+from .game import GameController
+from .events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
+from .players import Player
 
 
 DEFAULT_PORT = 8052
@@ -49,7 +44,7 @@ def authenticated(fn):
         return retval
 
     # copy argspec from wrapped function
-    wrapper.argspec = inspect.getargspec(fn)
+    wrapper.argspec = inspect.getfullargspec(fn)
     # and add our extra arg
     wrapper.argspec.args.insert(0, 'akey')
     return wrapper
@@ -59,7 +54,7 @@ def _game_get_rpc_info(game):
     Get RPC info for a GameController instance.
     TODO: does not belong here.
     """
-    return [rpc.rpc_encode(player) for player in game.players]
+    return [rpc_encode(player) for player in game.players]
 
 
 class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
@@ -67,21 +62,10 @@ class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
     Custom request handler class to support ajax/json RPC for GET requests and XML-RPC for POST.
     """
 
-    def encode_header(self, value):
-        """
-        Encode an HTTP header value. Try first natively in ISO-8859-1, then
-        UTF-8 encoded quoted string.
-        """
-        try:
-            return smart_unicode(value).encode('iso-8859-1')
-        except UnicodeEncodeError:
-            header = Header(smart_unicode(value), 'utf-8')
-            return header.encode()
-
     @traced
     def do_GET(self):
         try:
-            response = self.server.json_dispatch(self.path, self.headers)
+            response = self.server.json_dispatch(self.path, self.headers).encode()
         except ProtocolError as err:
             self.report_404()
             return
@@ -90,11 +74,11 @@ class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
             self.send_response(403) # forbidden
             response_obj = {'code': err.rpc_code,
                 'message': str(err)}
-            response = json.dumps(response_obj)
+            response = json.dumps(response_obj).encode()
             self.send_header("Content-type", "application/json")
             self.send_header("Content-length", str(len(response)))
             self.send_header("X-Error-Code", str(err.rpc_code))
-            self.send_header("X-Error-Message", self.encode_header(err))
+            self.send_header("X-Error-Message", str(err))
             self.end_headers()
 
             self.wfile.write(response)
@@ -120,12 +104,15 @@ class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
             self.connection.shutdown(1)
 
 
-class TupeloJSONDispatcher(object):
+class TupeloJSONDispatcher():
     """
     Simple JSON dispatcher mixin that calls the methods of "instance" member.
     """
 
     json_path_prefix = '/ajax/'
+
+    def __init__(self):
+        self.instance = None
 
     def _json_parse_headers(self, headers):
         """
@@ -211,13 +198,13 @@ class TupeloServer(xmlrpc.server.SimpleXMLRPCServer, TupeloJSONDispatcher):
             game.shutdown()
 
 
-class TupeloRPCInterface(object):
+class TupeloRPCInterface():
     """
     The RPC interface for the tupelo server.
     """
 
     def __init__(self):
-        super(TupeloRPCInterface, self).__init__()
+        super().__init__()
         self.players = []
         self.games = []
         self.methods = self._get_methods()
@@ -238,7 +225,7 @@ class TupeloRPCInterface(object):
                 if hasattr(func, 'argspec'):
                     methods[mname] = func.argspec[0]
                 else:
-                    methods[mname] = inspect.getargspec(func)[0]
+                    methods[mname] = inspect.getfullargspec(func)[0]
 
                 # remove 'self' from signature
                 if 'self' in methods[mname]:
@@ -246,7 +233,7 @@ class TupeloRPCInterface(object):
 
         return methods
 
-    def _get_player(self, player_id):
+    def _get_player(self, player_id: int):
         """
         Get player by id.
         """
@@ -256,7 +243,7 @@ class TupeloRPCInterface(object):
 
         raise GameError('Player (ID %s) does not exist' % player_id)
 
-    def _register_player(self, player):
+    def _register_player(self, player: 'RPCProxyPlayer'):
         """
         Register a new player to the server (internal function).
         """
@@ -266,9 +253,9 @@ class TupeloRPCInterface(object):
         self.players.append(player)
         return player.rpc_encode(private=True)
 
-    def _ensure_auth(self, akey):
+    def _ensure_auth(self, akey: str):
         """
-        Check the given authentication key and set self.authenticated_player.
+        Check the given authentication (session) key and set self.authenticated_player.
 
         Raises GameError if akey is not valid.
         """
@@ -285,7 +272,7 @@ class TupeloRPCInterface(object):
         """
         self.authenticated_player = None
 
-    def _get_game(self, game_id):
+    def _get_game(self, game_id: str):
         """
         Get game by id or raise an error.
         """
@@ -298,7 +285,7 @@ class TupeloRPCInterface(object):
     def echo(self, test):
         return test
 
-    @xmlrpc.error2fault
+    @error2fault
     def _dispatch(self, method, params):
         """
         Dispatch an XML-RPC call.
@@ -358,7 +345,7 @@ class TupeloRPCInterface(object):
 
         Return the player id.
         """
-        player = rpc.rpc_decode(RPCProxyPlayer, player)
+        player = rpc_decode(RPCProxyPlayer, player)
         return self._register_player(player)
 
     @authenticated
@@ -384,19 +371,19 @@ class TupeloRPCInterface(object):
         """
         List all players on server.
         """
-        return [rpc.rpc_encode(player) for player in self.players]
+        return [rpc_encode(player) for player in self.players]
 
-    def game_list(self, state=None):
+    def game_list(self, status=None):
         """
         List all games on server that are in the given state.
         """
         response = {}
-        if state is not None:
-            state = int(state)
+        if status is not None:
+            status = int(status)
 
         # TODO: add game state, joinable yes/no, password?
         for game in self.games:
-            if state is None or game.state.state == state:
+            if status is None or game.state.status == status:
                 response[str(game.id)] = _game_get_rpc_info(game)
 
         return response
@@ -408,7 +395,6 @@ class TupeloRPCInterface(object):
 
         Return the game id.
         """
-        player = self.authenticated_player
         game = GameController()
         # TODO: slight chance of race
         self.games.append(game)
@@ -422,7 +408,7 @@ class TupeloRPCInterface(object):
         return game.id
 
     @authenticated
-    def game_enter(self, game_id):
+    def game_enter(self, game_id: str):
         """
         Register a new player to the game.
 
@@ -438,7 +424,7 @@ class TupeloRPCInterface(object):
         return game_id
 
     @authenticated
-    def game_leave(self, game_id):
+    def game_leave(self, game_id: str):
         """
         Leave the game. Does not necessarily end the game.
         """
@@ -453,17 +439,17 @@ class TupeloRPCInterface(object):
         return True
 
     @authenticated
-    def game_get_state(self, game_id):
+    def game_get_state(self, game_id: str):
         """
         Get the state of a game for given player.
         """
         game = self._get_game(game_id)
         response = {}
-        response['game_state'] = rpc.rpc_encode(game.state)
-        response['hand'] = rpc.rpc_encode(self.authenticated_player.hand)
+        response['game_state'] = rpc_encode(game.state)
+        response['hand'] = rpc_encode(self.authenticated_player.hand)
         return response
 
-    def game_get_info(self, game_id):
+    def game_get_info(self, game_id: str):
         """
         Get the (static) information of a game.
         """
@@ -475,10 +461,10 @@ class TupeloRPCInterface(object):
         """
         Get the list of new events for given player.
         """
-        return rpc.rpc_encode(self.authenticated_player.pop_events())
+        return rpc_encode(self.authenticated_player.pop_events())
 
     @authenticated
-    def game_start(self, game_id):
+    def game_start(self, game_id: str):
         """
         Start a game.
         """
@@ -487,7 +473,7 @@ class TupeloRPCInterface(object):
         return True
 
     @authenticated
-    def game_start_with_bots(self, game_id):
+    def game_start_with_bots(self, game_id: str):
         """
         Start a game with bots.
         """
@@ -501,13 +487,13 @@ class TupeloRPCInterface(object):
         return self.game_start(self.authenticated_player.akey, game_id)
 
     @authenticated
-    def game_play_card(self, game_id, card):
+    def game_play_card(self, game_id: str, card):
         """
         Play one card in given game, by given player.
         """
         game = self._get_game(game_id)
         player = self.authenticated_player
-        game.play_card(player, rpc.rpc_decode(Card, card))
+        game.play_card(player, rpc_decode(Card, card))
         return True
 
 
@@ -516,18 +502,19 @@ class RPCProxyPlayer(players.Player):
     Server-side class for remote/RPC players.
     """
     def __init__(self, name):
-        players.Player.__init__(self, name)
+        super().__init__(name)
         self.events = queue.Queue()
         self.game = None
+        self.akey = None
 
     def rpc_encode(self, private=False):
         rpcobj = players.Player.rpc_encode(self)
         # don't encode the game object, just the ID
         if self.game:
-            rpcobj['game_id'] = rpc.rpc_encode(self.game.id)
+            rpcobj['game_id'] = rpc_encode(self.game.id)
 
         if private:
-            if hasattr(self, 'akey'):
+            if self.akey:
                 rpcobj['akey'] = self.akey
 
         return rpcobj
@@ -563,15 +550,15 @@ class RPCProxyPlayer(players.Player):
 
         return eventlist
 
-    def act(self, controller, game_state):
+    def act(self, controller, game_state: GameState):
         self.controller = controller
         self.game_state.update(game_state)
-        if self.game_state.state == GameState.STOPPED:
+        if self.game_state.status == GameState.STOPPED:
             return
-        elif self.game_state.state == GameState.VOTING:
+        elif self.game_state.status == GameState.VOTING:
             self.vote()
-        elif self.game_state.state == GameState.ONGOING:
+        elif self.game_state.status == GameState.ONGOING:
             self.play_card()
         else:
-            logging.warning("Warning: unknown state %d", self.game_state.state)
+            logging.warning("Warning: unknown status %d", self.game_state.status)
 

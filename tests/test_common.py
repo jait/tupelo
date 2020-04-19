@@ -5,7 +5,7 @@
 import unittest
 from tupelo import rpc
 from tupelo import common
-from tupelo.common import Card, CardSet, smart_unicode, smart_str, TupeloException
+from tupelo.common import Card, CardSet, TupeloException
 import threading
 import copy
 import time
@@ -41,6 +41,7 @@ class TestCommon(unittest.TestCase):
     def testSuitRPC(self):
         heart = common.HEART
         encoded = rpc.rpc_encode(heart)
+        self.assertEqual(encoded, 3)
         decoded = rpc.rpc_decode(common.Suit, encoded)
         self.assertTrue(isinstance(decoded, common.Suit))
         self.assertEqual(heart.value, decoded.value)
@@ -49,6 +50,7 @@ class TestCommon(unittest.TestCase):
     def testCardRPC(self):
         card = Card(common.HEART, 5)
         encoded = rpc.rpc_encode(card)
+        self.assertEqual(encoded, {'suit': 3, 'value': 5})
         self.assertFalse(isinstance(encoded, common.Card))
         decoded = rpc.rpc_decode(common.Card, encoded)
         self.assertTrue(isinstance(decoded, common.Card))
@@ -100,6 +102,18 @@ class TestCommon(unittest.TestCase):
         lo = cs.get_lowest(roof=2)
         self.assertTrue(lo is None)
 
+    def testCardSetSort(self):
+        cs = CardSet()
+        cs.append(Card(common.HEART, 7))
+        cs.append(Card(common.SPADE, 7))
+        cs.append(Card(common.HEART, 5))
+        cs.sort()
+        sorted_cs = CardSet()
+        sorted_cs.append(Card(common.SPADE, 7))
+        sorted_cs.append(Card(common.HEART, 5))
+        sorted_cs.append(Card(common.HEART, 7))
+        self.assertEqual(cs, sorted_cs)
+
     def testGameStateRPC(self):
         gs = common.GameState()
         gs.table.append(Card(common.HEART, 5))
@@ -108,33 +122,13 @@ class TestCommon(unittest.TestCase):
         self.assertTrue(isinstance(gs2, common.GameState))
         self.assertTrue(isinstance(gs2.table, gs.table.__class__))
         self.assertEqual(len(gs2.table), len(gs.table))
+        self.assertEqual(gs2.table, gs.table)
 
     def testShortUUID(self):
         suuid = common.short_uuid()
         self.assertTrue(isinstance(suuid, str))
         suuid2 = common.short_uuid()
         self.assertNotEqual(suuid, suuid2)
-
-    def testSmartUnicode(self):
-        self.assertEqual(smart_unicode('hello'), 'hello')
-        self.assertEqual(smart_unicode('hello'), 'hello')
-        self.assertEqual(smart_unicode('hellö'), 'hell\u00F6')
-        self.assertEqual(smart_unicode('hell\u00F6'), 'hell\u00F6')
-        self.assertEqual(smart_unicode(1), '1')
-        self.assertEqual(smart_unicode('\u2665'), '\u2665')
-        self.assertEqual(smart_unicode(TupeloException('hell\u00F6')), 'hell\u00F6')
-        self.assertEqual(smart_unicode(TupeloException('hellö')), 'hell\u00F6')
-
-    def testSmartStr(self):
-        self.assertEqual(smart_str('hello'), 'hello')
-        self.assertEqual(smart_str('hello'), 'hello')
-        self.assertEqual(smart_str('hellö'), 'hellö')
-        self.assertEqual(smart_str('hell\u00F6'), 'hellö')
-        self.assertEqual(smart_str(1), '1')
-        self.assertEqual(smart_str('\u2665'), '\xe2\x99\xa5')
-        self.assertRaises(UnicodeEncodeError, lambda: smart_str('hellö', 'ascii'))
-        self.assertEqual(smart_str(TupeloException('hellö')), 'hellö')
-        self.assertEqual(smart_str(TupeloException('hellö')), 'hellö')
 
     def testSynchronizedMethod(self):
         synctester = SyncTester()

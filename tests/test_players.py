@@ -12,7 +12,7 @@ class TestPlayers(unittest.TestCase):
         plr = players.ThreadedPlayer('Seppo')
         plr.start()
         self.assertTrue(plr.is_alive())
-        plr.game_state.state = GameState.STOPPED
+        plr.game_state.status = GameState.STOPPED
         plr.act(None, None)
         plr.join(5.0) # wait until the thread quits
         self.assertFalse(plr.is_alive())
