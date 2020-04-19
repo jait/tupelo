@@ -252,7 +252,7 @@ class GameController():
             else:
                 winner = 1
                 loser = 0
-            if self.state.rami_chosen_by.team != winner:
+            if self.state.rami_chosen_by and self.state.rami_chosen_by.team != winner:
                 self._send_msg("Double points for taking opponent's rami!")
                 score = (self.state.tricks[winner] - 6) * 8
             else:

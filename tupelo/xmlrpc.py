@@ -88,7 +88,7 @@ class XMLRPCCliPlayer(players.CliPlayer):
                 break
 
 
-class XMLRPCProxyController(object):
+class XMLRPCProxyController():
     """
     Client-side proxy object for the server/GameController.
     """
@@ -103,22 +103,22 @@ class XMLRPCProxyController(object):
         self.akey = None
 
     @fault2error
-    def play_card(self, player, card):
+    def play_card(self, _player, card):
         self.server.game.play_card(self.akey, self.game_id, rpc.rpc_encode(card))
 
     @fault2error
-    def get_events(self, player_id):
+    def get_events(self, _player_id):
         return rpc.rpc_decode(EventList, self.server.get_events(self.akey))
 
     @fault2error
-    def get_state(self, player_id):
+    def get_state(self, _player_id):
         state = self.server.game.get_state(self.akey, self.game_id)
         state['game_state'] = rpc.rpc_decode(GameState, state['game_state'])
         state['hand'] = rpc.rpc_decode(CardSet, state['hand'])
         return state
 
     @fault2error
-    def player_quit(self, player_id):
+    def player_quit(self, _player_id):
         self.server.player.quit(self.akey)
 
     @fault2error

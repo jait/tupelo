@@ -36,7 +36,7 @@ class Player(RPCSerializable):
         return state
 
     @classmethod
-    def rpc_decode(cls, rpcobj) -> 'Player':
+    def rpc_decode(cls, rpcobj: dict) -> 'Player':
         """
         Decode an RPC-form object into an instance of cls.
         """
@@ -361,7 +361,7 @@ class CountingBotPlayer(DummyBotPlayer):
     """
 
     def __init__(self, name):
-        DummyBotPlayer.__init__(self, name)
+        super().__init__(name)
         self.cards_left = CardSet()
 
     def vote(self):
@@ -371,7 +371,7 @@ class CountingBotPlayer(DummyBotPlayer):
         self.cards_left = CardSet.new_full_deck() - self.hand
         super(CountingBotPlayer, self).vote()
 
-    def card_played(self, player, card, game_state: GameState):
+    def card_played(self, player: Player, card: Card, game_state: GameState):
         """
         Signal that a card has been played by the given player.
         """
@@ -409,13 +409,14 @@ class CliPlayer(ThreadedPlayer):
         while not card_ok:
             try:
                 uinput = input('%s (1-%d) --> ' % (prompt, len(self.hand)))
-                index = int(uinput) - 1
-                if index < 0:
-                    raise IndexError()
-                card = self.hand[index]
-                card_ok = True
-            except (IndexError, ValueError):
-                print("Invalid choice `%s'" % uinput)
+                try:
+                    index = int(uinput) - 1
+                    if index < 0:
+                        raise IndexError()
+                    card = self.hand[index]
+                    card_ok = True
+                except (IndexError, ValueError):
+                    print("Invalid choice `%s'" % uinput)
             except EOFError:
                 #error.message = 'EOF received from command line'
                 #error.args = error.message,

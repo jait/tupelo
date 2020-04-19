@@ -5,7 +5,7 @@
 import unittest
 from tupelo import rpc
 from tupelo import common
-from tupelo.common import Card, CardSet, TupeloException
+from tupelo.common import Card, CardSet
 import threading
 import copy
 import time

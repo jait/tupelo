@@ -13,13 +13,12 @@ try:
     from urllib.parse import parse_qs
 except:
     from cgi import parse_qs
-from . import players
 from .xmlrpc import error2fault
 from .rpc import rpc_encode, rpc_decode
 from .common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState
 from .game import GameController
 from .events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
-from .players import Player
+from .players import Player, DummyBotPlayer
 
 
 DEFAULT_PORT = 8052
@@ -27,6 +26,8 @@ DEFAULT_PORT = 8052
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
 VERSION_STRING = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
+
+logger = logging.getLogger(__name__)
 
 @simple_decorator
 def authenticated(fn):
@@ -70,7 +71,7 @@ class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
             self.report_404()
             return
         except (GameError, RuleError) as err:
-            logging.exception(err)
+            logger.exception(err)
             self.send_response(403) # forbidden
             response_obj = {'code': err.rpc_code,
                 'message': str(err)}
@@ -86,7 +87,7 @@ class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
             self.wfile.flush()
             self.connection.shutdown(1)
         except Exception as err:
-            logging.exception(err)
+            logger.exception(err)
             self.send_response(500)
             self.end_headers()
         else:
@@ -345,8 +346,8 @@ class TupeloRPCInterface():
 
         Return the player id.
         """
-        player = rpc_decode(RPCProxyPlayer, player)
-        return self._register_player(player)
+        player_obj = RPCProxyPlayer.rpc_decode(player)
+        return self._register_player(player_obj)
 
     @authenticated
     def player_quit(self):
@@ -481,7 +482,7 @@ class TupeloRPCInterface():
         i = 1
         while len(game.players) < 4:
             # register bots only to game so that we don't need to unregister them
-            game.register_player(players.DummyBotPlayer('Robotti %d' % i))
+            game.register_player(DummyBotPlayer('Robotti %d' % i))
             i += 1
 
         return self.game_start(self.authenticated_player.akey, game_id)
@@ -497,7 +498,7 @@ class TupeloRPCInterface():
         return True
 
 
-class RPCProxyPlayer(players.Player):
+class RPCProxyPlayer(Player):
     """
     Server-side class for remote/RPC players.
     """
@@ -507,8 +508,8 @@ class RPCProxyPlayer(players.Player):
         self.game = None
         self.akey = None
 
-    def rpc_encode(self, private=False):
-        rpcobj = players.Player.rpc_encode(self)
+    def rpc_encode(self, private=False) -> dict:
+        rpcobj = Player.rpc_encode(self)
         # don't encode the game object, just the ID
         if self.game:
             rpcobj['game_id'] = rpc_encode(self.game.id)
@@ -560,5 +561,5 @@ class RPCProxyPlayer(players.Player):
         elif self.game_state.status == GameState.ONGOING:
             self.play_card()
         else:
-            logging.warning("Warning: unknown status %d", self.game_state.status)
+            logger.warning("Warning: unknown status %d", self.game_state.status)
 

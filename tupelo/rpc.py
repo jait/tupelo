@@ -142,7 +142,7 @@ class RPCSerializable():
         """
         return cls.rpc_decode_simple(rpcobj)
 
-    def rpc_decode_attr(self, rpcobj, attr, atype=None):
+    def rpc_decode_attr(self, rpcobj: dict, attr: str, atype=None):
         """
         Decode one attribute.
         """
