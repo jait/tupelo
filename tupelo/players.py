@@ -394,15 +394,19 @@ class CliPlayer(ThreadedPlayer):
     Command line interface human player.
     """
 
+    def echo(self, message: str = "", end="\n"):
+        """Print a message for the user."""
+        print(message, end=end)
+
     def _pick_card(self, prompt='Pick a card'):
         """
         Pick one card from the player's hand.
         """
-        print('Your hand:')
-        print('  '.join('%3s' % (card) for card in self.hand))
+        self.echo("Your hand:")
+        self.echo('  '.join('%3s' % (card) for card in self.hand))
         for i in range(0, len(self.hand)):
-            print('%3d ' % (i + 1), end=' ')
-        print()
+            self.echo('%3d ' % (i + 1), end=' ')
+        self.echo()
 
         card_ok = False
         card = None
@@ -416,7 +420,7 @@ class CliPlayer(ThreadedPlayer):
                     card = self.hand[index]
                     card_ok = True
                 except (IndexError, ValueError):
-                    print("Invalid choice `%s'" % uinput)
+                    self.echo("Invalid choice `%s'" % uinput)
             except EOFError:
                 #error.message = 'EOF received from command line'
                 #error.args = error.message,
@@ -429,16 +433,16 @@ class CliPlayer(ThreadedPlayer):
         """
         Vote for rami or nolo.
         """
-        print('Voting')
+        self.echo('Voting')
         card_played = False
         while not card_played:
             try:
                 card = self._pick_card()
-                print('Voting with %s' % (card))
+                self.echo('Voting with %s' % (card))
                 self.controller.play_card(self, card)
                 card_played = True
             except RuleError as error:
-                print('Oops:', error)
+                self.echo('Oops: %s' % error)
             except EOFError:
                 raise UserQuit('EOF from command line')
 
@@ -450,30 +454,30 @@ class CliPlayer(ThreadedPlayer):
 
         # print table
         if state.mode == NOLO:
-            print('Playing nolo')
+            self.echo('Playing nolo')
         elif state.mode == RAMI:
-            print('Playing rami')
+            self.echo('Playing rami')
         else:
-            print('Unknown mode %d' % state.mode)
+            self.echo('Unknown mode %d' % state.mode)
 
-        print('Table:')
+        self.echo('Table:')
         for card in state.table:
             try:
                 plr = '%s: ' % self.controller.get_player(card.played_by).player_name
             except:
                 # showing the (random) player ID is not very intuitive
                 plr = ''
-            print('%s%s' % (plr, card))
+            self.echo('%s%s' % (plr, card))
 
         card_played = False
         while not card_played:
             try:
                 card = self._pick_card('Card to play')
-                print('Playing %s' % (card))
+                self.echo('Playing %s' % (card))
                 self.controller.play_card(self, card)
                 card_played = True
             except RuleError as error:
-                print('Oops:', error)
+                self.echo('Oops: %s' % error)
             except EOFError:
                 raise UserQuit('EOF from command line')
 
@@ -487,16 +491,16 @@ class CliPlayer(ThreadedPlayer):
             player_str = '%s' % player
 
         if game_state.status == GameState.VOTING:
-            print('%s voted %s' % (player_str, card))
+            self.echo('%s voted %s' % (player_str, card))
         else:
-            print('%s played %s' % (player_str, card))
+            self.echo('%s played %s' % (player_str, card))
 
-    def send_message(self, sender, msg):
+    def send_message(self, sender: str, msg: str):
         """
         Send a message to this player.
         """
         if sender is not None:
-            print('%s: %s' % (sender, msg))
+            self.echo('%s: %s' % (sender, msg))
         else:
-            print('%s' % msg)
+            self.echo('%s' % msg)
 
