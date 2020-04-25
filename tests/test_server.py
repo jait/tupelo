@@ -11,7 +11,7 @@ class TestTupeloJSONDispatcher(unittest.TestCase):
 
     def testPath2Method(self):
         d = D()
-        self.assertEqual(d.json_path_prefix, '/ajax/') # default
+        self.assertEqual(d.json_path_prefix, '/api/') # default
 
         d.json_path_prefix = '/a/'
         self.assertEqual(d.path2method('/a/hello'), 'hello')

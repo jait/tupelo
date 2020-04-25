@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # vim: set sts=4 sw=4 et:
 
+from typing import Optional
 import copy
 import logging
 import queue
@@ -58,15 +59,135 @@ def _game_get_rpc_info(game):
     return [rpc_encode(player) for player in game.players]
 
 
+class TupeloJSONDispatcher():
+    """
+    Simple JSON dispatcher mixin that calls the methods of "instance" member.
+    """
+
+    json_path_prefix = '/api/'
+
+    def __init__(self):
+        self.instance = None
+
+    def _json_parse_headers(self, headers) -> dict:
+        """
+        Parse the HTTP headers and extract any params from them.
+        """
+        params = {}
+        # we support just 'akey' cookie
+        cookie = http.cookies.SimpleCookie(headers.get('Cookie'))
+        if 'akey' in cookie:
+            params['akey'] = cookie['akey'].value
+
+        return params
+
+    def path2method(self, path: str) -> Optional[str]:
+        """
+        Convert a request path to a method name.
+        """
+        if self.json_path_prefix:
+            if path.startswith(self.json_path_prefix):
+                return path[len(self.json_path_prefix):].replace('/', '_')
+            return None
+        else:
+            return path.lstrip('/').replace('/', '_')
+
+    def _json_parse_qstring(self, qstring: str):
+        """
+        Parse a query string into method and parameters.
+
+        Return a tuple of (method_name, params).
+        """
+        parsed = urllib.parse.urlparse(qstring)
+        path = parsed[2]
+        params = parse_qs(parsed[4])
+        # use only the first value of any given parameter
+        for k, v in list(params.items()):
+            # try to decode a json parameter
+            # if it fails, fall back to plain string
+            try:
+                params[k] = json.loads(v[0])
+            except:
+                params[k] = v[0]
+
+        return (self.path2method(path), params)
+
+    def register_instance(self, instance):
+        """
+        Register the target object instance.
+        """
+        self.instance = instance
+
+    def json_dispatch(self, qstring: str, headers, body=None) -> str:
+        """
+        Dispatch a JSON method call to the interface instance.
+        """
+        method, qs_params = self._json_parse_qstring(qstring)
+        if not method:
+            raise ProtocolError('No such method')
+        # alternatively, take params from body
+        if not qs_params and body:
+            (_, qs_params) = self._json_parse_qstring('?' + body.decode())
+
+        # the querystring params override header params
+        params = self._json_parse_headers(headers)
+        params.update(qs_params)
+
+        return json.dumps(self.instance._json_dispatch(method, params))
+
 class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
     """
-    Custom request handler class to support ajax/json RPC for GET requests and XML-RPC for POST.
+    Custom request handler class to support ajax/json API and XML-RPC, depending on the request path.
     """
+
+    rpc_paths = ('/RPC2',)
+    json_paths = (TupeloJSONDispatcher.json_path_prefix,) # /api
 
     @traced
     def do_GET(self):
+        for path in self.json_paths:
+            if self.path.startswith(path):
+                return self.handle_json_request()
+
+        # XML-RPC supports only POST
+        self.report_404()
+
+    @traced
+    def do_POST(self):
+        for path in self.json_paths:
+            if self.path.startswith(path):
+                return self.handle_json_request(self.get_body())
+
+        return super().do_POST()
+
+    def get_body(self):
         try:
-            response = self.server.json_dispatch(self.path, self.headers).encode()
+            # We read the body in chunks to avoid straining
+            # socket.read(); around the 10 or 15Mb mark, some platforms
+            # begin to have problems (bug #792570).
+            max_chunk_size = 10*1024*1024
+            size_remaining = int(self.headers["content-length"])
+            L = []
+            while size_remaining:
+                chunk_size = min(size_remaining, max_chunk_size)
+                chunk = self.rfile.read(chunk_size)
+                if not chunk:
+                    break
+                L.append(chunk)
+                size_remaining -= len(L[-1])
+            data = b''.join(L)
+
+            data = self.decode_request_content(data)
+            return data
+
+        except Exception as e: # This should only happen if the module is buggy
+            # internal error, report as HTTP server error
+            self.send_response(500)
+
+    @traced
+    def handle_json_request(self, body=None):
+        try:
+            response = self.server.json_dispatch(self.path, self.headers, body=body).encode()
         except ProtocolError as err:
             self.report_404()
             return
@@ -103,81 +224,6 @@ class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
             # shut down the connection
             self.wfile.flush()
             self.connection.shutdown(1)
-
-
-class TupeloJSONDispatcher():
-    """
-    Simple JSON dispatcher mixin that calls the methods of "instance" member.
-    """
-
-    json_path_prefix = '/ajax/'
-
-    def __init__(self):
-        self.instance = None
-
-    def _json_parse_headers(self, headers):
-        """
-        Parse the HTTP headers and extract any params from them.
-        """
-        params = {}
-        # we support just 'akey' cookie
-        cookie = http.cookies.SimpleCookie(headers.get('Cookie'))
-        if 'akey' in cookie:
-            params['akey'] = cookie['akey'].value
-
-        return params
-
-    def path2method(self, path):
-        """
-        Convert a request path to a method name.
-        """
-        if self.json_path_prefix:
-            if path.startswith(self.json_path_prefix):
-                return path[len(self.json_path_prefix):].replace('/', '_')
-            return None
-        else:
-            return path.lstrip('/').replace('/', '_')
-
-    def _json_parse_qstring(self, qstring):
-        """
-        Parse a query string into method and parameters.
-
-        Return a tuple of (method_name, params).
-        """
-        parsed = urllib.parse.urlparse(qstring)
-        path = parsed[2]
-        params = parse_qs(parsed[4])
-        # use only the first value of any given parameter
-        for k, v in list(params.items()):
-            # try to decode a json parameter
-            # if it fails, fall back to plain string
-            try:
-                params[k] = json.loads(v[0])
-            except:
-                params[k] = v[0]
-
-        return (self.path2method(path), params)
-
-    def register_instance(self, instance):
-        """
-        Register the target object instance.
-        """
-        self.instance = instance
-
-    def json_dispatch(self, qstring, headers):
-        """
-        Dispatch a JSON method call to the interface instance.
-        """
-        method, qs_params = self._json_parse_qstring(qstring)
-        if not method:
-            raise ProtocolError('No such method')
-
-        # the querystring params override header params
-        params = self._json_parse_headers(headers)
-        params.update(qs_params)
-
-        return json.dumps(self.instance._json_dispatch(method, params))
-
 
 class TupeloServer(xmlrpc.server.SimpleXMLRPCServer, TupeloJSONDispatcher):
     """
