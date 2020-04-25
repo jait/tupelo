@@ -13,6 +13,9 @@ class EventType(IntEnum):
     TURN = 4
     STATE_CHANGED = 5
 
+    def rpc_encode(self):
+        return int(self)
+
 
 class Event(RPCSerializable):
     """
