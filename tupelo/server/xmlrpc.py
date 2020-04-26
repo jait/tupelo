@@ -2,11 +2,11 @@
 # vim: set sts=4 sw=4 et:
 
 import time
-import xmlrpclib
-import players
-import rpc
-from common import GameState, CardSet, GameError, RuleError, ProtocolError, simple_decorator
-from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
+import xmlrpc.client
+from tupelo import players
+from tupelo import rpc
+from tupelo.common import GameState, CardSet, GameError, RuleError, ProtocolError, simple_decorator
+from tupelo.events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 
 @simple_decorator
 def error2fault(func):
@@ -17,12 +17,12 @@ def error2fault(func):
     def catcher(*args):
         try:
             return func(*args)
-        except GameError, error:
-            raise xmlrpclib.Fault(GameError.rpc_code, str(error))
-        except RuleError, error:
-            raise xmlrpclib.Fault(RuleError.rpc_code, str(error))
-        except ProtocolError, error:
-            raise xmlrpclib.Fault(ProtocolError.rpc_code, str(error))
+        except GameError as error:
+            raise xmlrpc.client.Fault(GameError.rpc_code, str(error))
+        except RuleError as error:
+            raise xmlrpc.client.Fault(RuleError.rpc_code, str(error))
+        except ProtocolError as error:
+            raise xmlrpc.client.Fault(ProtocolError.rpc_code, str(error))
     return catcher
 
 @simple_decorator
@@ -34,7 +34,7 @@ def fault2error(func):
     def catcher(*args):
         try:
             return func(*args)
-        except xmlrpclib.Fault, error:
+        except xmlrpc.client.Fault as error:
             error_classes = (GameError, RuleError, ProtocolError)
             for klass in error_classes:
                 if error.faultCode == klass.rpc_code:
@@ -69,7 +69,7 @@ class XMLRPCCliPlayer(players.CliPlayer):
         elif isinstance(event, StateChangedEvent):
             self.game_state.update(event.game_state)
         else:
-            print "unknown event: %s" % event
+            print("unknown event: %s" % event)
 
     def wait_for_turn(self):
         """
@@ -88,7 +88,7 @@ class XMLRPCCliPlayer(players.CliPlayer):
                 break
 
 
-class XMLRPCProxyController(object):
+class XMLRPCProxyController():
     """
     Client-side proxy object for the server/GameController.
     """
@@ -98,27 +98,27 @@ class XMLRPCProxyController(object):
             not server_uri.startswith('https://'):
             server_uri = 'http://' + server_uri
 
-        self.server = xmlrpclib.ServerProxy(server_uri)
+        self.server = xmlrpc.client.ServerProxy(server_uri)
         self.game_id = None
         self.akey = None
 
     @fault2error
-    def play_card(self, player, card):
+    def play_card(self, _player, card):
         self.server.game.play_card(self.akey, self.game_id, rpc.rpc_encode(card))
 
     @fault2error
-    def get_events(self, player_id):
+    def get_events(self, _player_id):
         return rpc.rpc_decode(EventList, self.server.get_events(self.akey))
 
     @fault2error
-    def get_state(self, player_id):
+    def get_state(self, _player_id):
         state = self.server.game.get_state(self.akey, self.game_id)
         state['game_state'] = rpc.rpc_decode(GameState, state['game_state'])
         state['hand'] = rpc.rpc_decode(CardSet, state['hand'])
         return state
 
     @fault2error
-    def player_quit(self, player_id):
+    def player_quit(self, _player_id):
         self.server.player.quit(self.akey)
 
     @fault2error

@@ -1,31 +1,20 @@
 #!/usr/bin/env python
 # vim: set sts=4 sw=4 et:
 
-import players
-import rpc
-from common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState, smart_unicode
-from game import GameController
-from events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
-import sys
 import copy
 import logging
-import Queue
-import SimpleXMLRPCServer
-import xmlrpc
-import traceback
+import queue
+import xmlrpc.server
 import inspect
 import json
-import urlparse
-import Cookie
-try:
-    from urlparse import parse_qs
-except:
-    from cgi import parse_qs
-try:
-    from email.header import Header
-except:
-    from email import Header
 
+from .xmlrpc import error2fault
+from tupelo.rpc import rpc_encode, rpc_decode
+from tupelo.common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState
+from tupelo.game import GameController
+from tupelo.events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
+from tupelo.players import Player, DummyBotPlayer
+from .jsonapi import TupeloJSONDispatcher
 
 DEFAULT_PORT = 8052
 
@@ -33,11 +22,7 @@ VERSION_MAJOR = 0
 VERSION_MINOR = 1
 VERSION_STRING = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
 
-def _log_exc(exception, level=logging.INFO):
-    """
-    Print the exception type and value string to log.
-    """
-    logging.log(level, "%s: %s", type(exception).__name__, str(exception))
+logger = logging.getLogger(__name__)
 
 @simple_decorator
 def authenticated(fn):
@@ -55,7 +40,7 @@ def authenticated(fn):
         return retval
 
     # copy argspec from wrapped function
-    wrapper.argspec = inspect.getargspec(fn)
+    wrapper.argspec = inspect.getfullargspec(fn)
     # and add our extra arg
     wrapper.argspec.args.insert(0, 'akey')
     return wrapper
@@ -65,51 +50,84 @@ def _game_get_rpc_info(game):
     Get RPC info for a GameController instance.
     TODO: does not belong here.
     """
-    return [rpc.rpc_encode(player) for player in game.players]
+    return [rpc_encode(player) for player in game.players]
 
 
-class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
+
+class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
     """
-    Custom request handler class to support ajax/json RPC for GET requests and XML-RPC for POST.
+    Custom request handler class to support ajax/json API and XML-RPC, depending on the request path.
     """
 
-    def encode_header(self, value):
-        """
-        Encode an HTTP header value. Try first natively in ISO-8859-1, then
-        UTF-8 encoded quoted string.
-        """
-        try:
-            return smart_unicode(value).encode('iso-8859-1')
-        except UnicodeEncodeError:
-            header = Header(smart_unicode(value), 'utf-8')
-            return header.encode()
+    rpc_paths = ('/RPC2',)
+    json_paths = (TupeloJSONDispatcher.json_path_prefix,) # /api
 
     @traced
     def do_GET(self):
+        for path in self.json_paths:
+            if self.path.startswith(path):
+                return self.handle_json_request()
+
+        # XML-RPC supports only POST
+        self.report_404()
+
+    @traced
+    def do_POST(self):
+        for path in self.json_paths:
+            if self.path.startswith(path):
+                return self.handle_json_request(self.get_body())
+
+        return super().do_POST()
+
+    def get_body(self):
         try:
-            response = self.server.json_dispatch(self.path, self.headers)
-        except ProtocolError, err:
+            # We read the body in chunks to avoid straining
+            # socket.read(); around the 10 or 15Mb mark, some platforms
+            # begin to have problems (bug #792570).
+            max_chunk_size = 10*1024*1024
+            size_remaining = int(self.headers["content-length"])
+            L = []
+            while size_remaining:
+                chunk_size = min(size_remaining, max_chunk_size)
+                chunk = self.rfile.read(chunk_size)
+                if not chunk:
+                    break
+                L.append(chunk)
+                size_remaining -= len(L[-1])
+            data = b''.join(L)
+
+            data = self.decode_request_content(data)
+            return data
+
+        except Exception as e: # This should only happen if the module is buggy
+            # internal error, report as HTTP server error
+            self.send_response(500)
+
+    @traced
+    def handle_json_request(self, body=None):
+        try:
+            response = self.server.json_dispatch(self.path, self.headers, body=body).encode()
+        except ProtocolError as err:
             self.report_404()
             return
-        except (GameError, RuleError), err:
-            _log_exc(err)
+        except (GameError, RuleError) as err:
+            logger.exception(err)
             self.send_response(403) # forbidden
             response_obj = {'code': err.rpc_code,
                 'message': str(err)}
-            response = json.dumps(response_obj)
+            response = json.dumps(response_obj).encode()
             self.send_header("Content-type", "application/json")
             self.send_header("Content-length", str(len(response)))
             self.send_header("X-Error-Code", str(err.rpc_code))
-            self.send_header("X-Error-Message", self.encode_header(err))
+            self.send_header("X-Error-Message", str(err))
             self.end_headers()
 
             self.wfile.write(response)
             # shut down the connection
             self.wfile.flush()
             self.connection.shutdown(1)
-        except Exception, err:
-            traceback.print_exception(*sys.exc_info())
-            _log_exc(err, logging.ERROR)
+        except Exception as err:
+            logger.exception(err)
             self.send_response(500)
             self.end_headers()
         else:
@@ -126,86 +144,14 @@ class TupeloRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
             self.wfile.flush()
             self.connection.shutdown(1)
 
-
-class TupeloJSONDispatcher(object):
-    """
-    Simple JSON dispatcher mixin that calls the methods of "instance" member.
-    """
-
-    json_path_prefix = '/ajax/'
-
-    def _json_parse_headers(self, headers):
-        """
-        Parse the HTTP headers and extract any params from them.
-        """
-        params = {}
-        # we support just 'akey' cookie
-        cookie = Cookie.SimpleCookie(headers.get('Cookie'))
-        if cookie.has_key('akey'):
-            params['akey'] = cookie['akey'].value
-
-        return params
-
-    def path2method(self, path):
-        """
-        Convert a request path to a method name.
-        """
-        if self.json_path_prefix:
-            if path.startswith(self.json_path_prefix):
-                return path[len(self.json_path_prefix):].replace('/', '_')
-            return None
-        else:
-            return path.lstrip('/').replace('/', '_')
-
-    def _json_parse_qstring(self, qstring):
-        """
-        Parse a query string into method and parameters.
-
-        Return a tuple of (method_name, params).
-        """
-        parsed = urlparse.urlparse(qstring)
-        path = parsed[2]
-        params = parse_qs(parsed[4])
-        # use only the first value of any given parameter
-        for k, v in params.items():
-            # try to decode a json parameter
-            # if it fails, fall back to plain string
-            try:
-                params[k] = json.loads(v[0])
-            except:
-                params[k] = v[0]
-
-        return (self.path2method(path), params)
-
-    def register_instance(self, instance):
-        """
-        Register the target object instance.
-        """
-        self.instance = instance
-
-    def json_dispatch(self, qstring, headers):
-        """
-        Dispatch a JSON method call to the interface instance.
-        """
-        method, qs_params = self._json_parse_qstring(qstring)
-        if not method:
-            raise ProtocolError('No such method')
-
-        # the querystring params override header params
-        params = self._json_parse_headers(headers)
-        params.update(qs_params)
-
-        return json.dumps(self.instance._json_dispatch(method, params))
-
-
-class TupeloServer(SimpleXMLRPCServer.SimpleXMLRPCServer, TupeloJSONDispatcher):
+class TupeloServer(xmlrpc.server.SimpleXMLRPCServer, TupeloJSONDispatcher):
     """
     Custom server class that combines XML-RPC and JSON servers.
     """
 
     def __init__(self, *args, **kwargs):
         nargs = (args[0:1] or (None,)) +  (TupeloRequestHandler,) +  args[2:]
-        SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(self, *nargs, **kwargs)
+        xmlrpc.server.SimpleXMLRPCServer.__init__(self, *nargs, **kwargs)
         TupeloJSONDispatcher.__init__(self)
         rpciface = TupeloRPCInterface()
         self.register_instance(rpciface)
@@ -218,13 +164,13 @@ class TupeloServer(SimpleXMLRPCServer.SimpleXMLRPCServer, TupeloJSONDispatcher):
             game.shutdown()
 
 
-class TupeloRPCInterface(object):
+class TupeloRPCInterface():
     """
     The RPC interface for the tupelo server.
     """
 
     def __init__(self):
-        super(TupeloRPCInterface, self).__init__()
+        super().__init__()
         self.players = []
         self.games = []
         self.methods = self._get_methods()
@@ -245,7 +191,7 @@ class TupeloRPCInterface(object):
                 if hasattr(func, 'argspec'):
                     methods[mname] = func.argspec[0]
                 else:
-                    methods[mname] = inspect.getargspec(func)[0]
+                    methods[mname] = inspect.getfullargspec(func)[0]
 
                 # remove 'self' from signature
                 if 'self' in methods[mname]:
@@ -253,7 +199,7 @@ class TupeloRPCInterface(object):
 
         return methods
 
-    def _get_player(self, player_id):
+    def _get_player(self, player_id: int):
         """
         Get player by id.
         """
@@ -263,7 +209,7 @@ class TupeloRPCInterface(object):
 
         raise GameError('Player (ID %s) does not exist' % player_id)
 
-    def _register_player(self, player):
+    def _register_player(self, player: 'RPCProxyPlayer'):
         """
         Register a new player to the server (internal function).
         """
@@ -273,9 +219,9 @@ class TupeloRPCInterface(object):
         self.players.append(player)
         return player.rpc_encode(private=True)
 
-    def _ensure_auth(self, akey):
+    def _ensure_auth(self, akey: str):
         """
-        Check the given authentication key and set self.authenticated_player.
+        Check the given authentication (session) key and set self.authenticated_player.
 
         Raises GameError if akey is not valid.
         """
@@ -292,7 +238,7 @@ class TupeloRPCInterface(object):
         """
         self.authenticated_player = None
 
-    def _get_game(self, game_id):
+    def _get_game(self, game_id: str):
         """
         Get game by id or raise an error.
         """
@@ -305,13 +251,13 @@ class TupeloRPCInterface(object):
     def echo(self, test):
         return test
 
-    @xmlrpc.error2fault
+    @error2fault
     def _dispatch(self, method, params):
         """
         Dispatch an XML-RPC call.
         """
         realname = method.replace('.', '_')
-        if realname in self.methods.keys():
+        if realname in list(self.methods.keys()):
             func = getattr(self, realname)
             return func(*params)
 
@@ -321,15 +267,15 @@ class TupeloRPCInterface(object):
         """
         Dispatch a json method call to method with kwparams.
         """
-        if method in self.methods.keys():
+        if method in list(self.methods.keys()):
             func = getattr(self, method)
             # strip out invalid params
-            for k in kwparams.keys():
+            for k in list(kwparams.keys()):
                 if k not in self.methods[method]:
                     del kwparams[k]
             try:
                 return func(**kwparams)
-            except TypeError, err:
+            except TypeError as err:
                 raise ProtocolError(str(err))
 
         raise ProtocolError('Method "%s" is not supported' % method)
@@ -365,8 +311,8 @@ class TupeloRPCInterface(object):
 
         Return the player id.
         """
-        player = rpc.rpc_decode(RPCProxyPlayer, player)
-        return self._register_player(player)
+        player_obj = RPCProxyPlayer.rpc_decode(player)
+        return self._register_player(player_obj)
 
     @authenticated
     def player_quit(self):
@@ -391,19 +337,19 @@ class TupeloRPCInterface(object):
         """
         List all players on server.
         """
-        return [rpc.rpc_encode(player) for player in self.players]
+        return [rpc_encode(player) for player in self.players]
 
-    def game_list(self, state=None):
+    def game_list(self, status=None):
         """
         List all games on server that are in the given state.
         """
         response = {}
-        if state is not None:
-            state = int(state)
+        if status is not None:
+            status = int(status)
 
         # TODO: add game state, joinable yes/no, password?
         for game in self.games:
-            if state is None or game.state.state == state:
+            if status is None or game.state.status == status:
                 response[str(game.id)] = _game_get_rpc_info(game)
 
         return response
@@ -415,7 +361,6 @@ class TupeloRPCInterface(object):
 
         Return the game id.
         """
-        player = self.authenticated_player
         game = GameController()
         # TODO: slight chance of race
         self.games.append(game)
@@ -429,7 +374,7 @@ class TupeloRPCInterface(object):
         return game.id
 
     @authenticated
-    def game_enter(self, game_id):
+    def game_enter(self, game_id: str):
         """
         Register a new player to the game.
 
@@ -445,7 +390,7 @@ class TupeloRPCInterface(object):
         return game_id
 
     @authenticated
-    def game_leave(self, game_id):
+    def game_leave(self, game_id: str):
         """
         Leave the game. Does not necessarily end the game.
         """
@@ -460,17 +405,17 @@ class TupeloRPCInterface(object):
         return True
 
     @authenticated
-    def game_get_state(self, game_id):
+    def game_get_state(self, game_id: str):
         """
         Get the state of a game for given player.
         """
         game = self._get_game(game_id)
         response = {}
-        response['game_state'] = rpc.rpc_encode(game.state)
-        response['hand'] = rpc.rpc_encode(self.authenticated_player.hand)
+        response['game_state'] = rpc_encode(game.state)
+        response['hand'] = rpc_encode(self.authenticated_player.hand)
         return response
 
-    def game_get_info(self, game_id):
+    def game_get_info(self, game_id: str):
         """
         Get the (static) information of a game.
         """
@@ -482,10 +427,10 @@ class TupeloRPCInterface(object):
         """
         Get the list of new events for given player.
         """
-        return rpc.rpc_encode(self.authenticated_player.pop_events())
+        return rpc_encode(self.authenticated_player.pop_events())
 
     @authenticated
-    def game_start(self, game_id):
+    def game_start(self, game_id: str):
         """
         Start a game.
         """
@@ -494,7 +439,7 @@ class TupeloRPCInterface(object):
         return True
 
     @authenticated
-    def game_start_with_bots(self, game_id):
+    def game_start_with_bots(self, game_id: str):
         """
         Start a game with bots.
         """
@@ -502,39 +447,40 @@ class TupeloRPCInterface(object):
         i = 1
         while len(game.players) < 4:
             # register bots only to game so that we don't need to unregister them
-            game.register_player(players.DummyBotPlayer('Robotti %d' % i))
+            game.register_player(DummyBotPlayer('Robotti %d' % i))
             i += 1
 
         return self.game_start(self.authenticated_player.akey, game_id)
 
     @authenticated
-    def game_play_card(self, game_id, card):
+    def game_play_card(self, game_id: str, card):
         """
         Play one card in given game, by given player.
         """
         game = self._get_game(game_id)
         player = self.authenticated_player
-        game.play_card(player, rpc.rpc_decode(Card, card))
+        game.play_card(player, rpc_decode(Card, card))
         return True
 
 
-class RPCProxyPlayer(players.Player):
+class RPCProxyPlayer(Player):
     """
     Server-side class for remote/RPC players.
     """
     def __init__(self, name):
-        players.Player.__init__(self, name)
-        self.events = Queue.Queue()
+        super().__init__(name)
+        self.events = queue.Queue()
         self.game = None
+        self.akey = None
 
-    def rpc_encode(self, private=False):
-        rpcobj = players.Player.rpc_encode(self)
+    def rpc_encode(self, private=False) -> dict:
+        rpcobj = Player.rpc_encode(self)
         # don't encode the game object, just the ID
         if self.game:
-            rpcobj['game_id'] = rpc.rpc_encode(self.game.id)
+            rpcobj['game_id'] = rpc_encode(self.game.id)
 
         if private:
-            if hasattr(self, 'akey'):
+            if self.akey:
                 rpcobj['akey'] = self.akey
 
         return rpcobj
@@ -565,20 +511,20 @@ class RPCProxyPlayer(players.Player):
         try:
             while True:
                 eventlist.append(self.events.get_nowait())
-        except Queue.Empty:
+        except queue.Empty:
             pass
 
         return eventlist
 
-    def act(self, controller, game_state):
+    def act(self, controller, game_state: GameState):
         self.controller = controller
         self.game_state.update(game_state)
-        if self.game_state.state == GameState.STOPPED:
+        if self.game_state.status == GameState.STOPPED:
             return
-        elif self.game_state.state == GameState.VOTING:
+        elif self.game_state.status == GameState.VOTING:
             self.vote()
-        elif self.game_state.state == GameState.ONGOING:
+        elif self.game_state.status == GameState.ONGOING:
             self.play_card()
         else:
-            logging.warning("Warning: unknown state %d", self.game_state.state)
+            logger.warning("Warning: unknown status %d", self.game_state.status)
 

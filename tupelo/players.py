@@ -2,23 +2,23 @@
 # vim: set sts=4 sw=4 et:
 
 import threading
-from common import CardSet, SPADE, CLUB, HEART, DIAMOND
-from common import NOLO, RAMI
-from common import RuleError, UserQuit, GameState
-import rpc
+from .common import Card, CardSet, SPADE, CLUB, HEART, DIAMOND
+from .common import NOLO, RAMI
+from .common import RuleError, UserQuit, GameState
+from .rpc import RPCSerializable
 
-class Player(rpc.RPCSerializable):
+class Player(RPCSerializable):
     """
     Base class for players.
     """
     rpc_attrs = ('id', 'player_name', 'team')
 
-    def __init__(self, name):
+    def __init__(self, name:str):
+        super().__init__()
         self.id = None
-        rpc.RPCSerializable.__init__(self)
         self.player_name = name
         self.hand = CardSet()
-        self.team = 0
+        self.team: int = 0
         self.controller = None
         self.game_state = GameState()
 
@@ -36,7 +36,7 @@ class Player(rpc.RPCSerializable):
         return state
 
     @classmethod
-    def rpc_decode(cls, rpcobj):
+    def rpc_decode(cls, rpcobj: dict) -> 'Player':
         """
         Decode an RPC-form object into an instance of cls.
         """
@@ -59,19 +59,19 @@ class Player(rpc.RPCSerializable):
         """
         pass
 
-    def card_played(self, player, card, game_state):
+    def card_played(self, player: 'Player', card: Card, game_state: GameState):
         """
         Signal that a card has been played by the given player.
         """
         pass
 
-    def trick_played(self, player, game_state):
+    def trick_played(self, player, game_state: GameState):
         """
         Signal that a trick has been played. "player" had the winning card.
         """
         pass
 
-    def state_changed(self, game_state):
+    def state_changed(self, game_state: GameState):
         """
         Signal that the game state has changed, e.g. from VOTING to ONGOING.
         """
@@ -81,30 +81,30 @@ class Player(rpc.RPCSerializable):
         """
         Vote for rami or nolo.
         """
-        print 'Not implemented!'
+        print('Not implemented!')
         raise NotImplementedError()
 
     def play_card(self):
         """
         Play one card.
         """
-        print 'Not implemented!'
+        print('Not implemented!')
         raise NotImplementedError()
 
-    def send_message(self, sender, msg):
+    def send_message(self, sender, msg: str):
         """
         """
-        print 'Not implemented!'
+        print('Not implemented!')
         raise NotImplementedError()
 
-    def act(self, controller, game_state):
+    def act(self, controller, game_state: GameState):
         """
         Do something.
 
         This is an event handler that updates
         the game state and wakes up the thread.
         """
-        print 'Not implemented!'
+        print('Not implemented!')
         raise NotImplementedError()
 
 
@@ -120,12 +120,7 @@ class ThreadedPlayer(Player):
         """
         Create a new thread for this player.
         """
-        try:
-            strname = str(self.player_name)
-        except UnicodeEncodeError:
-            strname = filter(lambda x: ord(x) < 128, self.player_name)
-
-        return threading.Thread(None, self.run, strname)
+        return threading.Thread(None, self.run, self.player_name)
 
     def wait_for_turn(self):
         """
@@ -176,39 +171,39 @@ class ThreadedPlayer(Player):
         """
         The real work is here.
         """
-        print '%s starting' % self
+        print(('%s starting' % self))
         self.stop_flag = False
         while True:
 
             self.wait_for_turn()
 
-            if self.game_state.state == GameState.STOPPED or \
+            if self.game_state.status == GameState.STOPPED or \
                     self.stop_flag == True:
                 break
-            elif self.game_state.state == GameState.VOTING:
+            elif self.game_state.status == GameState.VOTING:
                 try:
                     self.vote()
-                except UserQuit, error:
-                    print 'UserQuit:', error
+                except UserQuit as error:
+                    print(('UserQuit:', error))
                     self.controller.player_quit(self.id)
                     break
-                except Exception, error:
-                    print 'Error:', error
+                except Exception as error:
+                    print(('Error:', error))
                     raise
-            elif self.game_state.state == GameState.ONGOING:
+            elif self.game_state.status == GameState.ONGOING:
                 try:
                     self.play_card()
-                except UserQuit, error:
-                    print 'UserQuit:', error
+                except UserQuit as error:
+                    print(('UserQuit:', error))
                     self.controller.player_quit(self.id)
                     break
-                except Exception, error:
-                    print 'Error:', error
+                except Exception as error:
+                    print(('Error:', error))
                     raise
             else:
-                print "Warning: unknown state %d" % self.game_state.state
+                print(("Warning: unknown status %d" % self.game_state.status))
 
-        print '%s exiting' % self
+        print(('%s exiting' % self))
 
     def stop(self):
         """
@@ -217,7 +212,7 @@ class ThreadedPlayer(Player):
         self.stop_flag = True
         self.turn_event.set()
 
-    def act(self, controller, game_state):
+    def act(self, controller, game_state: GameState):
         """
         Do something.
 
@@ -257,7 +252,7 @@ class DummyBotPlayer(ThreadedPlayer):
             # nolo, black cards
             choices = self.hand.get_cards(suit=SPADE)
             choices.extend(self.hand.get_cards(suit=CLUB))
-            
+
         if len(choices) == 0:
             choices = self.hand
 
@@ -269,8 +264,8 @@ class DummyBotPlayer(ThreadedPlayer):
         try:
             #print '%s voting %s' % (self, best)
             self.controller.play_card(self, best)
-        except RuleError, error:
-            print 'Oops', error
+        except RuleError as error:
+            print('Oops', error)
             raise
 
     def play_card(self):
@@ -301,7 +296,7 @@ class DummyBotPlayer(ThreadedPlayer):
                             card = choices.get_highest()
                         else:
                             # i'm third
-                            # TODO: should also consider higher cards 
+                            # TODO: should also consider higher cards
                             candidate = choices.get_highest(roof=high.value)
                             if candidate is not None:
                                 card = candidate
@@ -348,15 +343,15 @@ class DummyBotPlayer(ThreadedPlayer):
                             candidate = choices.get_highest(floor=high.value)
                             if candidate is not None:
                                 card = candidate
-                            else: 
+                            else:
                                 # but I cannot take it...
                                 card = choices.get_lowest()
-                                
+
         try:
             #print '%s playing %s' % (self, card)
             self.controller.play_card(self, card)
-        except RuleError, error:
-            print 'Oops', error
+        except RuleError as error:
+            print('Oops', error)
             raise
 
 
@@ -366,7 +361,7 @@ class CountingBotPlayer(DummyBotPlayer):
     """
 
     def __init__(self, name):
-        DummyBotPlayer.__init__(self, name)
+        super().__init__(name)
         self.cards_left = CardSet()
 
     def vote(self):
@@ -376,21 +371,21 @@ class CountingBotPlayer(DummyBotPlayer):
         self.cards_left = CardSet.new_full_deck() - self.hand
         super(CountingBotPlayer, self).vote()
 
-    def card_played(self, player, card, game_state):
+    def card_played(self, player: Player, card: Card, game_state: GameState):
         """
         Signal that a card has been played by the given player.
         """
         if player == self:
             return
 
-        if game_state.state == GameState.VOTING:
+        if game_state.status == GameState.VOTING:
             pass
-        elif game_state.state == GameState.ONGOING:
+        elif game_state.status == GameState.ONGOING:
             #print "removing %s  from %s" %(card, self.cards_left)
             try:
                 self.cards_left.remove(card)
             except ValueError:
-                print "Oops: removing card %s failed" % card
+                print("Oops: removing card %s failed" % card)
                 # TODO: we sometimes get this with CountingBotPlayer
 
 
@@ -399,28 +394,33 @@ class CliPlayer(ThreadedPlayer):
     Command line interface human player.
     """
 
+    def echo(self, message: str = "", end="\n"):
+        """Print a message for the user."""
+        print(message, end=end)
+
     def _pick_card(self, prompt='Pick a card'):
         """
         Pick one card from the player's hand.
         """
-        print 'Your hand:'
-        print u'  '.join(u'%3s' % (card) for card in self.hand)
+        self.echo("Your hand:")
+        self.echo('  '.join('%3s' % (card) for card in self.hand))
         for i in range(0, len(self.hand)):
-            print '%3d ' % (i + 1),
-        print
+            self.echo('%3d ' % (i + 1), end=' ')
+        self.echo()
 
         card_ok = False
         card = None
         while not card_ok:
             try:
-                uinput = raw_input('%s (1-%d) --> ' % (prompt, len(self.hand)))
-                index = int(uinput) - 1
-                if index < 0:
-                    raise IndexError()
-                card = self.hand[index] 
-                card_ok = True
-            except (IndexError, ValueError):
-                print "Invalid choice `%s'" % uinput
+                uinput = input('%s (1-%d) --> ' % (prompt, len(self.hand)))
+                try:
+                    index = int(uinput) - 1
+                    if index < 0:
+                        raise IndexError()
+                    card = self.hand[index]
+                    card_ok = True
+                except (IndexError, ValueError):
+                    self.echo("Invalid choice `%s'" % uinput)
             except EOFError:
                 #error.message = 'EOF received from command line'
                 #error.args = error.message,
@@ -433,16 +433,16 @@ class CliPlayer(ThreadedPlayer):
         """
         Vote for rami or nolo.
         """
-        print 'Voting'
+        self.echo('Voting')
         card_played = False
         while not card_played:
             try:
                 card = self._pick_card()
-                print 'Voting with %s' % (card)
+                self.echo('Voting with %s' % (card))
                 self.controller.play_card(self, card)
                 card_played = True
-            except RuleError, error:
-                print 'Oops:', error
+            except RuleError as error:
+                self.echo('Oops: %s' % error)
             except EOFError:
                 raise UserQuit('EOF from command line')
 
@@ -454,34 +454,34 @@ class CliPlayer(ThreadedPlayer):
 
         # print table
         if state.mode == NOLO:
-            print 'Playing nolo'
+            self.echo('Playing nolo')
         elif state.mode == RAMI:
-            print 'Playing rami'
+            self.echo('Playing rami')
         else:
-            print 'Unknown mode %d' % state.mode
+            self.echo('Unknown mode %d' % state.mode)
 
-        print 'Table:'
+        self.echo('Table:')
         for card in state.table:
             try:
                 plr = '%s: ' % self.controller.get_player(card.played_by).player_name
             except:
                 # showing the (random) player ID is not very intuitive
                 plr = ''
-            print '%s%s' % (plr, card)
+            self.echo('%s%s' % (plr, card))
 
         card_played = False
         while not card_played:
             try:
                 card = self._pick_card('Card to play')
-                print 'Playing %s' % (card)
+                self.echo('Playing %s' % (card))
                 self.controller.play_card(self, card)
                 card_played = True
-            except RuleError, error:
-                print 'Oops:', error
+            except RuleError as error:
+                self.echo('Oops: %s' % error)
             except EOFError:
                 raise UserQuit('EOF from command line')
 
-    def card_played(self, player, card, game_state):
+    def card_played(self, player: Player, card: Card, game_state: GameState):
         """
         Event handler for a played card.
         """
@@ -490,17 +490,17 @@ class CliPlayer(ThreadedPlayer):
         else:
             player_str = '%s' % player
 
-        if game_state.state == GameState.VOTING:
-            print '%s voted %s' % (player_str, card)
+        if game_state.status == GameState.VOTING:
+            self.echo('%s voted %s' % (player_str, card))
         else:
-            print '%s played %s' % (player_str, card)
+            self.echo('%s played %s' % (player_str, card))
 
-    def send_message(self, sender, msg):
+    def send_message(self, sender: str, msg: str):
         """
         Send a message to this player.
         """
         if sender is not None:
-            print '%s: %s' % (sender, msg)
+            self.echo('%s: %s' % (sender, msg))
         else:
-            print '%s' % msg
+            self.echo('%s' % msg)
 

@@ -11,8 +11,8 @@ class TestPlayers(unittest.TestCase):
     def testThreadedPlayer(self):
         plr = players.ThreadedPlayer('Seppo')
         plr.start()
-        self.assert_(plr.is_alive())
-        plr.game_state.state = GameState.STOPPED
+        self.assertTrue(plr.is_alive())
+        plr.game_state.status = GameState.STOPPED
         plr.act(None, None)
         plr.join(5.0) # wait until the thread quits
         self.assertFalse(plr.is_alive())
@@ -21,7 +21,7 @@ class TestPlayers(unittest.TestCase):
         plr = players.ThreadedPlayer('Seppo')
         plr.start()
         time.sleep(0.5)
-        self.assert_(plr.is_alive())
+        self.assertTrue(plr.is_alive())
         plr.stop()
         plr.join(5.0) # wait until the thread quits
         self.assertFalse(plr.is_alive())
@@ -30,7 +30,7 @@ class TestPlayers(unittest.TestCase):
         plr = players.ThreadedPlayer('Seppo')
         plr.start()
         time.sleep(0.5)
-        self.assert_(plr.is_alive())
+        self.assertTrue(plr.is_alive())
         # trying to start again while running should raise an exception
         self.assertRaises(RuntimeError, plr.start)
         plr.stop()
@@ -39,7 +39,7 @@ class TestPlayers(unittest.TestCase):
         # restart
         plr.start()
         time.sleep(0.5)
-        self.assert_(plr.is_alive())
+        self.assertTrue(plr.is_alive())
         plr.stop()
         plr.join(5.0) # wait until the thread quits
         self.assertFalse(plr.is_alive())

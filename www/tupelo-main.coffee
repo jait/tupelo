@@ -8,6 +8,8 @@ $(document).ready ->
   tupelo =
     game_state: {}
     events: []
+    config:
+      serverBaseUrl: "/api"
 
   states =
     initial:
@@ -62,9 +64,14 @@ $(document).ready ->
       T.log "error: " + error
     handled
 
+  request = (opts) ->
+    opts.url = tupelo.config.serverBaseUrl + opts.url
+    opts.error = opts.error || ajaxErr
+    $.ajax opts
+
   hello = ->
-    $.ajax
-      url: "/ajax/hello"
+    request
+      url: "/hello",
       success: (result) ->
         T.log "Server version: " + result.version
         # are we already logged in?
@@ -74,20 +81,18 @@ $(document).ready ->
           # are we in a game?
           if result.player.game_id?
             gameCreateOk result.player.game_id
-      error: ajaxErr
 
   updateGameLinks = (disabledIds) ->
     gameJoinClicked = (event) ->
       # "game_join_ID"
       game_id = @id[10..]
       T.log "joining game " + game_id
-      $.ajax
-        url: "/ajax/game/enter"
+      request
+        url: "/game/enter"
         data:
           akey: tupelo.player.akey
           game_id: game_id
         success: gameCreateOk
-        error: ajaxErr
 
     if tupelo.game_id?
       $("button.game_join").attr "disabled", true
@@ -135,7 +140,7 @@ $(document).ready ->
     $("#name").val ""
     tupelo.player.id = result.id
     tupelo.player.akey = result.akey
-    $.cookie "akey", result.akey
+    Cookies.set "akey", result.akey
     T.log tupelo
     dbg()
     # clear game list if there was one previously
@@ -172,7 +177,7 @@ $(document).ready ->
       clearInterval tupelo.list_timer
       tupelo.list_timer = null
 
-    $.cookie "akey", null
+    Cookies.remove "akey"
     tupelo.player = null
     T.log tupelo
     dbg()
@@ -184,7 +189,7 @@ $(document).ready ->
     dbg()
     $("p#joined_game").html "joined game #{tupelo.game_id}"
     setState "gameCreated", "fast"
-    tupelo.event_fetch_timer = new T.Timer("/ajax/get_events", 2000, eventsOk,
+    tupelo.event_fetch_timer = new T.Timer(tupelo.config.serverBaseUrl + "/get_events", 2000, eventsOk,
       data:
         akey: tupelo.player.akey
       )
@@ -242,9 +247,9 @@ $(document).ready ->
       tupelo.game_state[key] = state[key]
 
     # show game status (voting, nolo, rami)
-    if state.state is T.VOTING
+    if state.status is T.VOTING
       statusStr = "VOTING"
-    else if state.state is T.ONGOING
+    else if state.status is T.ONGOING
       if state.mode is T.NOLO
         statusStr = "NOLO"
       else statusStr = "RAMI" if state.mode is T.RAMI
@@ -274,8 +279,8 @@ $(document).ready ->
     card = tupelo.hand[cardId]
     T.log card
     if card?
-      $.ajax
-        url: "/ajax/game/play_card"
+      request
+        url: "/game/play_card"
         success: (result) ->
           tupelo.my_turn = false
           $("#hand .card").removeClass "card_selectable"
@@ -309,14 +314,13 @@ $(document).ready ->
       $("#hand a").click cardClicked
 
   getGameState = ->
-    $.ajax
-      url: "/ajax/game/get_state"
+    request
+      url: "/game/get_state"
       success: (result) ->
         T.log result
         updateGameState result.game_state if result.game_state?
         updateHand result.hand if result.hand?
 
-      error: ajaxErr
       data:
         akey: tupelo.player.akey
         game_id: tupelo.game_id
@@ -329,9 +333,9 @@ $(document).ready ->
 
   stateChanged = (event) ->
     T.log "stateChanged"
-    if event.game_state.state is T.VOTING # game started!
+    if event.game_state.status is T.VOTING # game started!
       startOk()
-    else if event.game_state.state is T.ONGOING # VOTING -> ONGOING
+    else if event.game_state.status is T.ONGOING # VOTING -> ONGOING
       # allow the user to clear the table and proceed by clicking the table
       $("#game_area table tbody").click clearTable
       # setting timeout to show the voted cards for a longer time
@@ -406,10 +410,9 @@ $(document).ready ->
 
     $("#event_log").html ""
     setState "inGame"
-    $.ajax
-      url: "/ajax/game/get_info"
+    request
+      url: "/game/get_info"
       success: gameInfoOk
-      error: ajaxErr
       data:
         game_id: tupelo.game_id
 
@@ -417,15 +420,13 @@ $(document).ready ->
     dbg()
 
   updateLists = ->
-    $.ajax
-      url: "/ajax/game/list"
+    request
+      url: "/game/list"
       success: listGamesOk
-      error: ajaxErr
 
-    $.ajax
-      url: "/ajax/player/list"
+    request
+      url: "/player/list"
       success: listPlayersOk
-      error: ajaxErr
       data:
         akey: tupelo.player.akey
 
@@ -433,14 +434,13 @@ $(document).ready ->
 
   $("#echo_ajax").click ->
     text = $("#echo").val()
-    $.ajax
-      url: "/ajax/echo"
+    request
+      url: "/echo"
       data:
         test: text
       success: (result) ->
         $("#echo_result").html escapeHtml(result)
         $("#echo").val ""
-      error: ajaxErr
 
   $("#register_btn").click ->
     input = $("#register_name")
@@ -451,12 +451,11 @@ $(document).ready ->
 
     tupelo.player = new T.Player(name)
     T.log tupelo
-    $.ajax
-      url: "/ajax/player/register"
+    request
+      url: "/player/register"
       data:
         player: JSON.stringify(tupelo.player)
       success: registerOk
-      error: ajaxErr
 
   # sign in by pressing enter
   $("#register_name").keyup (event) ->
@@ -468,8 +467,8 @@ $(document).ready ->
       $(this).removeClass "initial"
 
   $("#quit_btn").click ->
-    $.ajax
-      url: "/ajax/player/quit"
+    request
+      url: "/player/quit"
       data:
         akey: tupelo.player.akey
       success: quitOk
@@ -478,8 +477,8 @@ $(document).ready ->
 
   $(".game_leave_btn").click ->
     # TODO: should we cancel timers already here?
-    $.ajax
-      url: "/ajax/game/leave"
+    request
+      url: "/game/leave"
       data:
         akey: tupelo.player.akey
         game_id: tupelo.game_id
@@ -489,30 +488,27 @@ $(document).ready ->
 
   $("#game_create_btn").click ->
     # TODO: should we cancel timers already here?
-    $.ajax
-      url: "/ajax/game/create"
+    request
+      url: "/game/create"
       data:
         akey: tupelo.player.akey
       success: gameCreateOk
-      error: ajaxErr
 
   $("#game_start").click ->
-    $.ajax
-      url: "/ajax/game/start"
+    request
+      url: "/game/start"
       data:
         akey: tupelo.player.akey
         game_id: tupelo.game_id
       success: startOk
-      error: ajaxErr
 
   $("#game_start_with_bots").click ->
-    $.ajax
-      url: "/ajax/game/start_with_bots"
+    request
+      url: "/game/start_with_bots"
       data:
         akey: tupelo.player.akey
         game_id: tupelo.game_id
       success: startOk
-      error: ajaxErr
 
   if T.debug is true
     $("#debug").click ->
@@ -523,8 +519,8 @@ $(document).ready ->
   # leave the game when the user leaves the page
   $(window).unload ->
     if tupelo.game_id?
-      $.ajax
-        url: "/ajax/game/leave"
+      request
+        url: "/game/leave"
         async: false
         data:
           akey: tupelo.player.akey
