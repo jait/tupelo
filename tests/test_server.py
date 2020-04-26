@@ -4,7 +4,8 @@
 
 import unittest
 from tupelo import rpc
-from tupelo.server import TupeloRPCInterface as I, TupeloJSONDispatcher as D
+from tupelo.server import TupeloRPCInterface as I
+from tupelo.server.jsonapi import TupeloJSONDispatcher as D
 from tupelo.players import Player
 
 class TestTupeloJSONDispatcher(unittest.TestCase):

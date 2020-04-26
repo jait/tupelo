@@ -368,7 +368,7 @@ class GameState(rpc.RPCSerializable):
     State of a single game.
     """
     rpc_attrs = ('status', 'mode', 'table:CardSet', 'score', 'tricks', 'turn',
-            'turn_id')
+            'turn_id', 'dealer')
 
     # statuses
     OPEN = 0

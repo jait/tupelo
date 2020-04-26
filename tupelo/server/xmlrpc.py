@@ -3,10 +3,10 @@
 
 import time
 import xmlrpc.client
-from . import players
-from . import rpc
-from .common import GameState, CardSet, GameError, RuleError, ProtocolError, simple_decorator
-from .events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
+from tupelo import players
+from tupelo import rpc
+from tupelo.common import GameState, CardSet, GameError, RuleError, ProtocolError, simple_decorator
+from tupelo.events import EventList, CardPlayedEvent, MessageEvent, TrickPlayedEvent, TurnEvent, StateChangedEvent
 
 @simple_decorator
 def error2fault(func):
