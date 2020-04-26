@@ -8,7 +8,7 @@ import xmlrpc.server
 import inspect
 import json
 
-from .xmlrpc import error2fault
+from tupelo.xmlrpc import error2fault
 from tupelo.rpc import rpc_encode, rpc_decode
 from tupelo.common import Card, GameError, RuleError, ProtocolError, traced, short_uuid, simple_decorator, GameState
 from tupelo.game import GameController
