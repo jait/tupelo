@@ -48,5 +48,4 @@ def handler(request):
         Response object using
         `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
     """
-
     return dispatcher.handle_request(request)

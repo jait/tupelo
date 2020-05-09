@@ -140,33 +140,33 @@
       }
     };
     listGamesOk = function(result) {
-      var disabledIds, game_id, html, players, res;
+      var disabledIds, game, html, j, len, players, res;
       //T.log "listGamesOk"
       //T.log result
       html = "";
       disabledIds = [];
-      for (game_id in result) {
-        if (!hasProp.call(result, game_id)) continue;
-        html += `<tr id=\"game_id_${game_id}\">`;
+      for (j = 0, len = result.length; j < len; j++) {
+        game = result[j];
+        html += `<tr id=\"game_id_${game.id}\">`;
         //players = []
         //for res in result[game_id]
         //  plr = new T.Player().fromObj res
         //  players.push plr.player_name
         players = (function() {
-          var j, len, ref, results;
-          ref = result[game_id];
+          var k, len1, ref, results;
+          ref = game.players;
           results = [];
-          for (j = 0, len = ref.length; j < len; j++) {
-            res = ref[j];
+          for (k = 0, len1 = ref.length; k < len1; k++) {
+            res = ref[k];
             results.push(new T.Player().fromObj(res).player_name);
           }
           return results;
         })();
         html += "<td>" + escapeHtml(players.join(", ")) + "</td>";
-        html += "<td class=\"game_list_actions\"><button class=\"game_join btn\" id=\"game_join_" + game_id + "\"><span><span>join</span></span></button></td>";
+        html += "<td class=\"game_list_actions\"><button class=\"game_join btn\" id=\"game_join_" + game.id + "\"><span><span>join</span></span></button></td>";
         html += "</tr>";
         if (players.length === 4) {
-          disabledIds.push(`game_join_${game_id}`);
+          disabledIds.push(`game_join_${game.id}`);
         }
       }
       $("#game_list table tbody").html(html);
@@ -477,20 +477,22 @@
       return dbg();
     };
     gameInfoOk = function(result) {
-      var i, index, j, k, len, len1, myIndex, pl;
+      var i, index, j, k, len, len1, myIndex, pl, ref, ref1;
       T.log("gameInfoOk");
       T.log(result);
       myIndex = 0;
-// find my index
-      for (i = j = 0, len = result.length; j < len; i = ++j) {
-        pl = result[i];
+      ref = result.players;
+      // find my index
+      for (i = j = 0, len = ref.length; j < len; i = ++j) {
+        pl = ref[i];
         if (pl.id === tupelo.player.id) {
           myIndex = i;
           break;
         }
       }
-      for (i = k = 0, len1 = result.length; k < len1; i = ++k) {
-        pl = result[i];
+      ref1 = result.players;
+      for (i = k = 0, len1 = ref1.length; k < len1; i = ++k) {
+        pl = ref1[i];
         // place where the player goes when /me is always at the bottom
         index = (4 + i - myIndex) % 4;
         // set player id and name
@@ -509,7 +511,8 @@
         url: "/game/get_info",
         success: gameInfoOk,
         data: {
-          game_id: tupelo.game_id
+          game_id: tupelo.game_id,
+          akey: tupelo.player.akey
         }
       });
       getGameState();
@@ -518,7 +521,10 @@
     updateLists = function() {
       request({
         url: "/game/list",
-        success: listGamesOk
+        success: listGamesOk,
+        data: {
+          akey: tupelo.player.akey
+        }
       });
       return request({
         url: "/player/list",

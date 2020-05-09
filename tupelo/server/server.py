@@ -45,14 +45,16 @@ def authenticated(fn):
     wrapper.argspec.args.insert(0, 'akey')
     return wrapper
 
-def _game_get_rpc_info(game):
-    """
-    Get RPC info for a GameController instance.
-    TODO: does not belong here.
-    """
-    return [rpc_encode(player) for player in game.players]
 
+class NetworkGameController(GameController):
 
+  def _rpc_info(self, authenticated_player=None) -> dict:
+        """
+        Get RPC info for a GameController instance.
+        """
+        my_game_id = authenticated_player.game.id if authenticated_player and authenticated_player.game else None
+        logger.debug("my_game_id: %s, plr: %s", my_game_id, authenticated_player)
+        return {'id': self.id, 'players': [rpc_encode(player) for player in self.players], 'joined': self.id == my_game_id}
 
 class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
     """
@@ -300,7 +302,7 @@ class TupeloRPCInterface():
             plr = self.authenticated_player
             response['player'] = plr.rpc_encode(private=True)
             if plr.game:
-                response['game'] = _game_get_rpc_info(plr.game)
+                response['game'] = plr.game._rpc_info(plr)
 
         self._clear_auth()
         return response
@@ -339,20 +341,16 @@ class TupeloRPCInterface():
         """
         return [rpc_encode(player) for player in self.players]
 
+    @authenticated
     def game_list(self, status=None):
         """
         List all games on server that are in the given state.
         """
-        response = {}
         if status is not None:
             status = int(status)
 
         # TODO: add game state, joinable yes/no, password?
-        for game in self.games:
-            if status is None or game.state.status == status:
-                response[str(game.id)] = _game_get_rpc_info(game)
-
-        return response
+        return [g._rpc_info(self.authenticated_player) for g in self.games if status is None or g.state.status == status]
 
     @authenticated
     def game_create(self):
@@ -361,7 +359,7 @@ class TupeloRPCInterface():
 
         Return the game id.
         """
-        game = GameController()
+        game = NetworkGameController()
         # TODO: slight chance of race
         self.games.append(game)
         game.id = short_uuid()
@@ -415,12 +413,13 @@ class TupeloRPCInterface():
         response['hand'] = rpc_encode(self.authenticated_player.hand)
         return response
 
+    @authenticated
     def game_get_info(self, game_id: str):
         """
         Get the (static) information of a game.
         """
         game = self._get_game(game_id)
-        return _game_get_rpc_info(game)
+        return game._rpc_info(self.authenticated_player)
 
     @authenticated
     def get_events(self):

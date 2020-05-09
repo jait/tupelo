@@ -30,6 +30,9 @@ class GameController():
         self.id = None
         self.lock_start = threading.Lock()
 
+    def __getstate__(self):
+        return {k:v for (k,v) in self.__dict__.items() if k not in ('lock_start', 'shutdown_event')}
+
     def register_player(self, player: Player):
         """
         Register a new Player.

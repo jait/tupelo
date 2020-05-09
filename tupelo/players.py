@@ -22,18 +22,14 @@ class Player(RPCSerializable):
         self.controller = None
         self.game_state = GameState()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<%s: %s>' % (self.__class__.__name__, self.player_name)
 
     def __getstate__(self):
         """
         Make Player classes safe for pickling and deepcopying.
         """
-        state = {}
-        for key, _ in self.iter_rpc_attrs():
-            state[key] = getattr(self, key)
-
-        return state
+        return {k:v for (k,v) in self.__dict__.items() if k not in ('controller', 'game_state')}
 
     @classmethod
     def rpc_decode(cls, rpcobj: dict) -> 'Player':

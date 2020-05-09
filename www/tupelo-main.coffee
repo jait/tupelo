@@ -106,18 +106,18 @@ $(document).ready ->
     #T.log result
     html = ""
     disabledIds = []
-    for own game_id of result
-      html += "<tr id=\"game_id_#{game_id}\">"
+    for game in result
+      html += "<tr id=\"game_id_#{game.id}\">"
       #players = []
       #for res in result[game_id]
       #  plr = new T.Player().fromObj res
       #  players.push plr.player_name
-      players = (new T.Player().fromObj(res).player_name for res in result[game_id])
+      players = (new T.Player().fromObj(res).player_name for res in game.players)
 
       html += "<td>" + escapeHtml(players.join(", ")) + "</td>"
-      html += "<td class=\"game_list_actions\"><button class=\"game_join btn\" id=\"game_join_" + game_id + "\"><span><span>join</span></span></button></td>"
+      html += "<td class=\"game_list_actions\"><button class=\"game_join btn\" id=\"game_join_" + game.id + "\"><span><span>join</span></span></button></td>"
       html += "</tr>"
-      disabledIds.push "game_join_#{game_id}" if players.length is 4
+      disabledIds.push "game_join_#{game.id}" if players.length is 4
 
     $("#game_list table tbody").html html
     updateGameLinks disabledIds
@@ -389,12 +389,12 @@ $(document).ready ->
     T.log result
     myIndex = 0
     # find my index
-    for pl, i in result
+    for pl, i in result.players
       if pl.id is tupelo.player.id
         myIndex = i
         break
 
-    for pl, i in result
+    for pl, i in result.players
       # place where the player goes when /me is always at the bottom
       index = (4 + i - myIndex) % 4
       # set player id and name
@@ -415,6 +415,7 @@ $(document).ready ->
       success: gameInfoOk
       data:
         game_id: tupelo.game_id
+        akey: tupelo.player.akey
 
     getGameState()
     dbg()
@@ -423,6 +424,8 @@ $(document).ready ->
     request
       url: "/game/list"
       success: listGamesOk
+      data:
+        akey: tupelo.player.akey
 
     request
       url: "/player/list"

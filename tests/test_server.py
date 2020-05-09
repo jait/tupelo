@@ -95,25 +95,28 @@ class TestTupeloRPCInterface(unittest.TestCase):
 
     def testGame(self):
         iface = I()
-        gamelist = iface.game_list()
-        self.assertTrue(isinstance(gamelist, dict))
-        self.assertEqual(len(gamelist), 0)
         # register
         p_encoded = self._encoded_player()
         p_data = iface.player_register(p_encoded)
+        # list (no games)
+        gamelist = iface.game_list(p_data['akey'])
+        self.assertTrue(isinstance(gamelist, list))
+        self.assertEqual(len(gamelist), 0)
         # create game
         g_id = iface.game_create(p_data['akey'])
         # list
-        gamelist = iface.game_list()
-        self.assertTrue(str(g_id) in gamelist)
-        players_raw = gamelist[str(g_id)]
+        gamelist = iface.game_list(p_data['akey'])
+        self.assertTrue(str(g_id) in [g['id'] for g in gamelist])
+        game = [g for g in gamelist if g['id'] == str(g_id)][0]
+        self.assertTrue(game['joined'])
+        players_raw = game['players']
         self.assertTrue(isinstance(players_raw, list))
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players_raw]
         self.assertTrue(p_data['id'] in [pl.id for pl in players])
         # get_info
-        info = iface.game_get_info(g_id)
-        self.assertTrue(info == players_raw)
+        info = iface.game_get_info(p_data['akey'], g_id)
+        self.assertEqual(info, game)
         # leave
         ret = iface.player_quit(p_data['akey'])
         self.assertEqual(ret, True)
@@ -139,9 +142,10 @@ class TestTupeloRPCInterface(unittest.TestCase):
         ret = iface.game_enter(p_datas[3]['akey'], g_id)
         self.assertEqual(ret, g_id)
 
-        gamelist = iface.game_list()
-        self.assertTrue(str(g_id) in gamelist)
-        players = gamelist[str(g_id)]
+        gamelist = iface.game_list(p_datas[0]['akey'])
+        self.assertTrue(str(g_id) in [g['id'] for g in gamelist])
+        game = [g for g in gamelist if g['id'] == str(g_id)][0]
+        players = game['players']
         self.assertEqual(len(players), len(p_datas))
         # decode
         players = [rpc.rpc_decode(Player, pl) for pl in players]
