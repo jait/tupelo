@@ -54,7 +54,10 @@ class NetworkGameController(GameController):
         """
         my_game_id = authenticated_player.game.id if authenticated_player and authenticated_player.game else None
         logger.debug("my_game_id: %s, plr: %s", my_game_id, authenticated_player)
-        return {'id': self.id, 'players': [rpc_encode(player) for player in self.players], 'joined': self.id == my_game_id}
+        return {'id': self.id,
+            'players': [rpc_encode(player) for player in self.players],
+            'joined': self.id == my_game_id,
+            'status': self.state.status}
 
 class TupeloRequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
     """
