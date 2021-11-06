@@ -16,9 +16,10 @@ def _runserver():
     parser.add_option("-p", "--port", dest='port', action="store",
             type="int", default=DEFAULT_PORT,
             help="port number for the server")
+    parser.add_option("-v", action="store_true", dest="verbose")
     (opts, args) = parser.parse_args()
     logformat = "server: %(message)s"
-    logging.basicConfig(level=logging.INFO, format=logformat)
+    logging.basicConfig(level=logging.DEBUG if opts.verbose else logging.INFO, format=logformat)
     tupelo_server = TupeloServer((LISTEN_ADDR, opts.port))
     logging.info('Tupelo server serving at port %d', opts.port)
     try:
