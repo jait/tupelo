@@ -17,7 +17,7 @@ from .players import Player, ThreadedPlayer
 
 logger = logging.getLogger()
 
-class GameController():
+class GameController:
     """
     The controller class that runs everything.
     """
@@ -96,6 +96,7 @@ class GameController():
         Set the next player in turn.
         """
         self.state.next_in_turn(thenext)
+        logger.debug("In turn: %s", thenext)
         self.state.turn_id = self._get_player_in_turn(self.state.turn).id
 
     def _set_state(self, new_status: int):
@@ -337,6 +338,7 @@ class GameController():
 
         if self.state.status == GameState.VOTING:
             self._vote_card(player, card)
+            logger.debug("%s voted %s", player, card)
 
         elif self.state.status == GameState.ONGOING:
             # make sure that suit is followed
@@ -351,6 +353,8 @@ class GameController():
             except ValueError:
                 raise RuleError('Invalid card')
 
+
+            logger.debug("%s played %s", player, card)
             if len(table) == 4:
                 # TODO: there must be a better way for this
                 turn_backup = self.state.turn
