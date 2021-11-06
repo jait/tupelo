@@ -29,7 +29,7 @@ class Player(RPCSerializable):
         """
         Make Player classes safe for pickling and deepcopying.
         """
-        return {k:v for (k,v) in self.__dict__.items() if k not in ('controller', 'game_state')}
+        return {k:v for (k,v) in self.__dict__.items() if k not in ('controller', 'game_state', 'turn_event')}
 
     @classmethod
     def rpc_decode(cls, rpcobj: dict) -> 'Player':
@@ -132,7 +132,10 @@ class ThreadedPlayer(Player):
         Return true if the player thread is alive.
         """
         if self.thread is not None:
-            return self.thread.isAlive()
+            try:
+                return self.thread.is_alive()
+            except AttributeError:
+                return self.thread.isAlive()
 
         return False
 
