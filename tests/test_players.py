@@ -2,6 +2,7 @@
 # vim: set sts=4 sw=4 et:
 
 import unittest
+import copy
 import time
 from tupelo import players
 from tupelo.common import GameState
@@ -43,6 +44,10 @@ class TestPlayers(unittest.TestCase):
         plr.stop()
         plr.join(5.0) # wait until the thread quits
         self.assertFalse(plr.is_alive())
+
+    def testPlayerDeepcopy(self):
+        plr = players.ThreadedPlayer('Seppo')
+        plr_copy = copy.deepcopy(plr)
 
 
 if __name__ == '__main__':

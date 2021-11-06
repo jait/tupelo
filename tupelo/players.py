@@ -12,6 +12,7 @@ class Player(RPCSerializable):
     Base class for players.
     """
     rpc_attrs = ('id', 'player_name', 'team')
+    no_pickle_attrs = ('controller', 'game_state')
 
     def __init__(self, name:str):
         super().__init__()
@@ -29,7 +30,7 @@ class Player(RPCSerializable):
         """
         Make Player classes safe for pickling and deepcopying.
         """
-        return {k:v for (k,v) in self.__dict__.items() if k not in ('controller', 'game_state', 'turn_event')}
+        return {k:v for (k,v) in self.__dict__.items() if k not in self.no_pickle_attrs}
 
     @classmethod
     def rpc_decode(cls, rpcobj: dict) -> 'Player':
@@ -105,6 +106,8 @@ class Player(RPCSerializable):
 
 
 class ThreadedPlayer(Player):
+
+    no_pickle_attrs = Player.no_pickle_attrs + ('turn_event', 'thread')
 
     def __init__(self, name):
         Player.__init__(self, name)
